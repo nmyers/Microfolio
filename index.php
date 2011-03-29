@@ -1,6 +1,8 @@
 <?php
 /**
+ * --------------------------------------------------------------------
  * Microfolio
+ * --------------------------------------------------------------------
  *
  * An open source portfolio CMS for PHP 5.3 or newer! (see todo)
  *
@@ -24,6 +26,8 @@ $cfg = array (
     'projects_dir' => "projects/",
     'style_dir'    => "style/",
     'tpl_dir'      => "tpl/",
+    'js_dir'       => "js/",
+    'css_dir'      => "css/",
     'theme'        => "default/",
 
     //users
@@ -36,10 +40,10 @@ $cfg = array (
  */
 $cfg['base_url']  = "http://" . $_SERVER['HTTP_HOST'];
 $cfg['base_url'] .= str_replace(basename($_SERVER['SCRIPT_NAME']), "", $_SERVER['SCRIPT_NAME']);
-
-//Uncomment the following line to override
 //$cfg['base_url']  = "http://localhost/microfolio";
 
+$cfg['base_dir'] = realpath('.').'/';
+$cfg['base_dir'] = str_replace("\\","/",rtrim($cfg['base_dir'], '/').'/');
 
 /*
  * --------------------------------------------------------------------
@@ -183,8 +187,16 @@ function ctrl_admin_project_create() {
 
 }
 
-function ctrl_admin_project_media_delete() {
-
+function ctrl_admin_project_media_delete($project_name) {
+    global $cfg;
+    checkAjax();
+    $file = $cfg['projects_dir'].$project_name.'/'.htmlentities($_POST['media_file']);
+    if (file_exists($file)) {
+        unlink($file);
+        echo '1';
+    } else {
+        echo '0';
+    }
 }
 
 /*
@@ -302,6 +314,24 @@ function redirect($action) {
     die();
 }
 
+
+function includeJS($filename="") {
+    global $cfg;
+    $script_filename = $cfg['style_dir'].$cfg['theme'].$cfg['js_dir'];
+    if ($filename=="") {
+        $script_filename .= str_replace("ctrl_","",$cfg['controller']).".js";
+    } else {
+        $script_filename .= $filename;
+    }
+    if (file_exists($script_filename)) {
+        $script_url = $cfg['base_url'].$script_filename;
+        return "<script type=\"text/javascript\" src=\"$script_url\"></script>";
+    } else {
+        return "";
+    }
+}
+
+
 /*
  * -------------------------------------------------------------------
  *  USER LOGIN FUNCTIONS
@@ -369,24 +399,24 @@ function front_ctrl() {
     //Read the PATH INFO to divide the request in segments
     //The first one will be used as the controller
 
-    $args = explode("/", substr($_SERVER['PATH_INFO'], 1));
-    if (!$args) $args = array($cfg['default_controller']);
-    $controller = 'ctrl_' . array_shift($args);
+    $args = @explode("/", substr($_SERVER['PATH_INFO'], 1));
+    if (!$args) $args = array($cfg['default_ctrl']);
+    $cfg['controller'] = 'ctrl_' . array_shift($args);
     $cfg['args'] = implode('/', $args);
 
     //Defines the controller if it exists
-    if (!function_exists($controller))
-        $controller = 'ctrl_' . $cfg['default_controller'];
+    if (!function_exists($cfg['controller']))
+        $cfg['controller'] = 'ctrl_' . $cfg['default_ctrl'];
 
     //Checks the login if it's an admin controller
-    if (stripos($controller, "_admin_") !== false) {
+    if (stripos($cfg['controller'], "_admin_") !== false) {
         if (!is_logged())
             redirect("/login");
         $cfg['theme'] = 'admin/';
     }
 
     //Calls the controller function
-    call_user_func_array($controller, $args);
+    call_user_func_array($cfg['controller'], $args);
 }
 
 //Launches the front controlller if this file is not an include
