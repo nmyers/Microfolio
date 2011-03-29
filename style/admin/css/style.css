@@ -4,36 +4,136 @@
 
 .media .controls {display:block;position:absolute;}
 .media a { margin-right:2px;}
-    /* fileuploader*/
 
-    .qq-uploader { position:relative; width: 100%;}
 
-.qq-upload-button {
-    display:block; /* or inline-block */
-    width: 105px; padding: 7px 0; text-align:center;
-    background:#880000; border-bottom:1px solid #ddd;color:#fff;
-}
-.qq-upload-button-hover {background:#cc0000;}
-.qq-upload-button-focus {outline:1px dotted black;}
+		body {
+			color: #333;
+			background-color: #fff;
+			font-size: 13px;
+			font-family: Arial, sans-serif;
+			padding: 2em 4em;
+			width: 860px;
+			margin: 0 auto;
+		}
 
-.qq-upload-drop-area {
-    position:absolute; top:0; left:0; width:100%; height:100%; min-height: 70px; z-index:2;
-    background:#FF9797; text-align:center;
-}
-.qq-upload-drop-area span {
-    display:block; position:absolute; top: 50%; width:100%; margin-top:-8px; font-size:16px;
-}
-.qq-upload-drop-area-active {background:#FF7171;}
+		pre, code {
+			font-size: 12px;
+		}
 
-.qq-upload-list {margin:15px 35px; padding:0; list-style:disc;}
-.qq-upload-list li { margin:0; padding:0; line-height:15px; font-size:12px;}
-.qq-upload-file, .qq-upload-spinner, .qq-upload-size, .qq-upload-cancel, .qq-upload-failed-text {
-    margin-right: 7px;
-}
+		small {
+			font-size: 90%;
+		}
 
-.qq-upload-file {}
-.qq-upload-spinner {display:inline-block; background: url("loading.gif"); width:15px; height:15px; vertical-align:text-bottom;}
-.qq-upload-size,.qq-upload-cancel {font-size:11px;}
+		small code {
+			font-size: 11px;
+		}
 
-.qq-upload-failed-text {display:none;}
-.qq-upload-fail .qq-upload-failed-text {display:inline;}
+		.placeholder {
+			background-color: #cfcfcf;
+		}
+
+		.ui-nestedSortable-error {
+			background:#fbe3e4;
+			color:#8a1f11;
+		}
+
+		ol {
+			margin: 0;
+			padding: 0;
+			padding-left: 30px;
+		}
+
+		ol.sortable, ol.sortable ol {
+			margin: 0 0 0 25px;
+			padding: 0;
+			list-style-type: none;
+		}
+
+		ol.sortable {
+			margin: 4em 0;
+		}
+
+		.sortable li {
+			margin: 7px 0 0 0;
+			padding: 0;
+		}
+
+		.sortable li div  {
+			border: 1px solid black;
+			padding: 3px;
+			margin: 0;
+			cursor: move;
+		}
+
+		h1 {
+			font-size: 2em;
+			margin-bottom: 0;
+		}
+
+		h2 {
+			font-size: 1.2em;
+			font-weight: normal;
+			font-style: italic;
+			margin-top: .2em;
+			margin-bottom: 1.5em;
+		}
+
+		h3 {
+			font-size: 1em;
+			margin: 1em 0 .3em;;
+		}
+
+		p, ol, ul, pre, form {
+			margin-top: 0;
+			margin-bottom: 1em;
+		}
+
+		dl {
+			margin: 0;
+		}
+
+		dd {
+			margin: 0;
+			padding: 0 0 0 1.5em;
+		}
+
+		code {
+			background: #e5e5e5;
+		}
+
+		input {
+			vertical-align: text-bottom;
+		}
+
+		#notice {
+			color: #c33;
+		}
+                ol div.controls {
+                    margin:0;
+                    padding:0;
+                    border:0;
+                }
+                .controls a {
+                    margin-right: 3px;
+                }
+
+                .controls .bt-publish span {
+                    display: none;
+                }
+
+                .controls .bt-hide span {
+                    display: none;
+                }
+
+                .prj-publish .controls .bt-publish span {
+                    display: inline;
+                }
+
+                .prj-hide .controls .bt-hide span {
+                    display: inline;
+                }
+                .prj-hide {
+                opacity:.5;
+
+                }
+

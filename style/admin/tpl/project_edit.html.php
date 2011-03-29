@@ -1,9 +1,18 @@
 <?php output('_header.html.php',$output); ?>
-<script type="text/javascript" >
-    var project_name = '<?=$project_name?>';
-</script> 
-<?output('_menu.html.php',$output);?>
 
+    <!-- custom javascript -->
+    <?=includeJS("jquery-ui-1.8.11.custom.min.js");?>
+    <?=includeJS("fileuploader.js");?>
+    <?=includeJS("admin_project_edit.js");?>
+
+    <script type="text/javascript" >
+        var project_name = '<?=$project_name?>';
+    </script>
+
+    <!-- custom css -->
+    <?=includeCSS("fileuploader.css");?>
+
+<?output('_menu.html.php',$output);?>
 <h1>Project</h1>
 <form id="projectform" name="projectform" >
     <a href="#" id="saveproject" >save page</a>

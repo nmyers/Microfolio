@@ -105,10 +105,60 @@ function ctrl_logout() {
  * @todo ...a lot
  * @global  $cfg
  */
-function ctrl_admin_project_list() {
+function ctrl_admin_projects_menu() {
     global $cfg;
-    $output['projects'] = getDirs($cfg['projects_dir']);
-    output("project_list.html.php", $output);
+    
+    //load html parser
+    include_lib('simple_html_dom/simple_html_dom.php');
+
+    $html = file_get_html($cfg['projects_dir'].'projects.html');
+    $projects_dir = getDirs($cfg['projects_dir']);
+
+    $projects_found = array();
+    foreach($html->find('#menu-projects .project a') as $project_link) {
+        $project_name = str_replace("/project.html","",$project_link->href);
+        if(!in_array($project_name, $projects_dir)) {
+            //folder does not exists -> remove element
+            $project_link->parent()->parent()->outertext = "";
+        } else {
+            $projects_found[] = $project_name;
+        }
+    }
+
+    //add links for new project folders
+    $projects_new = array_diff($projects_dir,$projects_found);
+    $menu_dom = $html->find("#menu-projects",0);
+    foreach ($projects_new as $project_new) {
+        $new_project_link = "<li><div class=\"project\" ><a href=\"$project_new/project.html\" >$project_new</a></div></li>";
+        $menu_dom->innertext = $menu_dom->innertext .$new_project_link;
+    }
+
+    $html->find("#menu-projects",0)->class="sortable";
+    $output['menu'] = $html->find("#menu-projects",0);
+    
+    output("projects_menu.html.php", $output);
+}
+
+/**
+ * Saves the menu
+ * @global array $cfg
+ */
+function ctrl_admin_projects_menu_save() {
+    global $cfg;
+    checkAjax();
+
+    include_lib('simple_html_dom/simple_html_dom.php');
+    include_lib('htmlindent/htmlindent.php');
+
+    $menuhtml = str_get_html($_POST['menuhtml']);
+    foreach($menuhtml->find('.controls') as $e) $e->outertext = '';
+    foreach($menuhtml->find('li[style]') as $e) $e->style = null;;
+
+    $output['menuhtml'] = clean_html_code($menuhtml->save());
+    $html = output("empty_projects_menu.html.php", $output, true);
+    if(!file_put_contents($cfg['projects_dir']."projects.html", $html))
+        die('Error writing "projects.html".');
+    echo '1';
 }
 
 /**
@@ -117,51 +167,48 @@ function ctrl_admin_project_list() {
  * this is verrrry slow.. maybe because of all the dom stuff
  *
  * @global  $cfg
- * @param <type> $project_name
+ * @param string $project_name
  */
 function ctrl_admin_project_edit($project_name) {
     global $cfg;
 
+    
     $project_dir = $cfg['projects_dir'] . $project_name . '/';
     $project_file = $project_dir . 'project.html';
-    $html_dom = getDOM($project_file);
 
-    //get images from directory
-    $dir_imgs = getFiles($cfg['projects_dir'] . $project_name, '/\.(jpg|jpeg)/i');
+    //load html parser
+    include_lib('simple_html_dom/simple_html_dom.php');
 
-    //Removes nodes (divs) referencing missing images
-    $xpath = new DOMXpath($html_dom);
-    foreach ($xpath->query('//div/img') as $node) {
-        if (!in_array($src = $node->getAttribute('src'), $dir_imgs)) {
-            $parent_node = $node->parentNode;
-            $parent_node->parentNode->removeChild($parent_node);
+    $html = file_get_html($project_file);
+    $dir_imgs = getFiles($project_dir, '/\.(jpg|jpeg)/i');
+
+    $found_imgs = array();
+    foreach($html->find('#gallery img') as $img) {
+        if(!in_array($img->src, $dir_imgs)) {
+            $img->parent()->outertext = ""; //not in dir? > remove div
         } else {
-            $found_imgs[] = $src;
+            $found_imgs[] = $img->src;
         }
     }
-    
+
     //new images
     $new_imgs = array_diff($dir_imgs, $found_imgs);
-    $dom_gallery_node = $xpath->query('//div[@id="gallery"]')->item(0);
+
+    //add links for new project folders
+    $gallery_dom = $html->find("#gallery",0);
     foreach ($new_imgs as $new_img) {
-        $xml = "   <div class=\"media\" >\n";
-        $xml.= "      <img src=\"$new_img\" />\n";
-        $xml.= "      <div class=\"caption\" > </div>\n"; //spaces left in div on purpose!
-        $xml.= "   </div>\n";
-        $new_img = $html_dom->createDocumentFragment();
-        $new_img->appendXML($xml);
-        $dom_gallery_node->appendChild($new_img);
+        $div = "<div class=\"media\" >";
+        $div.= "   <img src=\"$new_img\" />";
+        $div.= "   <div class=\"caption\" > </div>"; //spaces left in div on purpose!
+        $div.= "</div>";
+        $gallery_dom->innertext = $gallery_dom->innertext .$div;
     }
 
-    $html_sxml = simplexml_import_dom($html_dom);
-
-    //extract the html for the gallery and add the full url
-    $output['gallery'] = array_pop($html_sxml->xpath('//div[@id="gallery"]'))->asXML();
-    $output['gallery'] = str_replace('src="', 'src="' . $cfg['base_url'] . $project_dir, $output['gallery']);
-
-    $output['title'] = array_pop($html_sxml->xpath('//h1[@id="title"]'));
-    $output['text'] = array_pop($html_sxml->xpath('//div[@id="presentation"]/pre'));
-
+    //prepare vars for template
+    $gallery_html = $html->find("#gallery",0)->outertext;
+    $output['gallery'] = str_replace('src="', 'src="'.$cfg['base_url'].$project_dir, $gallery_html);
+    $output['title'] = $html->find("h1",0)->innertext;
+    $output['text'] = $html->find("#presentation pre",0)->innertext;
     $output['project_name'] = $project_name;
 
     output("project_edit.html.php", $output);
@@ -172,20 +219,68 @@ function ctrl_admin_project_edit($project_name) {
  * Ajax only!
  *
  * @global  $cfg
- * @param <type> $project_name
+ * @param string $project_name
  */
 function ctrl_admin_project_save($project_name) {
     global $cfg;
     checkAjax();
-    //file_put_contents('test', var_export($_POST,true));
+
+    $project_dir = $cfg['projects_dir'] . $project_name . '/';
+    $project_file = $project_dir . 'project.html';
+
+    include_lib('simple_html_dom/simple_html_dom.php');
+    include_lib('htmlindent/htmlindent.php');
+    include_lib('markdown/markdown.php');
+
+    $html = file_get_html($project_file);
+
+    //cleans and adds the gallery
+    $gallery = str_get_html($_POST['gallery']);
+    foreach($gallery->find('.controls') as $e) $e->outertext = '';
+    foreach($gallery->find('img') as $img) {
+        $img->src = substr($img->src, strrpos($img->src,"/")+1);
+    }
+    $html->find("#gallery",0)->innertext = clean_html_code($gallery);
+
+    //process and adds the text
+    $raw_text = html_entity_decode($_POST['text']);
+    $processed_text = Markdown($raw_text);
+    $html_text = "<pre class='unprocessed' >".$raw_text."</pre>\n";
+    $html_text .= "<div class='processed' >".$processed_text."</div>";
+    $html->find("#presentation",0)->innertext = $html_text;
+
+    //adds the text
+    $html->find("#title",0)->innertext = $_POST["title"];
+
+    if(!file_put_contents($project_file, $html->save()))
+        die('Error writing "project.html".');
+    echo '1';
 }
 
 function ctrl_admin_project_delete($project_name) {
-
+    global $cfg;
+    checkAjax();
+    $projects = getDirs($cfg['projects_dir']);
+    if (!in_array($project_name, $projects)) die("This project does not exist.");
+    foreach(getFiles($cfg['projects_dir'].$project_name) as $file)
+        if(!unlink($cfg['projects_dir'].$project_name.'/'.$file)) die("Could not delete the file: ".$project_name);;
+    if(!rmdir($cfg['projects_dir'].$project_name)) die("Could not delete the folder: ".$project_name);
+    echo '1';
 }
 
-function ctrl_admin_project_create() {
-
+function ctrl_admin_project_create($project_name) {
+    global $cfg;
+    checkAjax();
+    $projects = getDirs($cfg['projects_dir']);
+    if (in_array($project_name, $projects))
+            die("This project already exists.");
+    if(!mkdir($cfg['projects_dir'].$project_name)) 
+        die('Error creating the folder.');
+    $output['project_name'] = $project_name;
+    $html = output("empty_project.html.php", $output, true);
+    if(!file_put_contents($cfg['projects_dir'].$project_name."/project.html", $html))
+        die('Error writing "project.html".');
+    echo '1';
 }
 
 function ctrl_admin_project_media_delete($project_name) {
@@ -251,6 +346,17 @@ function getDirs($dir) {
     return array_filter($files, function($elem) use ($dir) {
                 return ($elem != '.' && $elem != '..' && is_dir($dir . '/' . $elem));
             });
+}
+
+/**
+ * Includes an external library
+ *
+ * @global array $cfg
+ * @param  string $filename
+ */
+function include_lib($filename) {
+    global $cfg;
+    require_once $cfg['lib_dir'].$filename;
 }
 
 /**

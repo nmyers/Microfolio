@@ -5,8 +5,8 @@
  */
 
 $(function() {
-        $.getScript("https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.11/jquery-ui.min.js",createSortable);
-        $.getScript(base_url+"/lib/ajaxupload/fileuploader.js",createUploader);
+        createSortable();
+        createUploader();
         addControls();
         $('#saveproject').click(function() {
             saveProject();
@@ -54,11 +54,19 @@ $(function() {
     }
 
     function saveProject() {
-        $.post(base_url+"admin_project_save/"+project_name,{
+
+        $.post(base_url+"index.php/admin_project_save/"+project_name,{
+           ajax: true,
            title: $("#project_title").attr("value"),
            text:  $("#project_text").html(),
-           media: $("#gallery").html()
-        })
+           gallery: $("#gallery").html()
+        },function(data) {
+           if (data=='1') {
+               alert("saved");
+           } else {
+               alert(data);
+           }
+       })
     }
 
     function deleteMedia(media_file) {
