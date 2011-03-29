@@ -1,0 +1,22 @@
+<project>
+<title>This is the title</title>
+<text><![CDATA[
+This is the text
+that you need
+for explaining
+  <p>qasdqsd</p>
+qdsqsdqs
+
+in markdown
+]]></text>
+<medialist>
+<media>
+    <filename>dc_003.jpg</filename>
+    <title>No</title>
+    <caption>caption</caption>
+</media>
+<media>
+    <filename>dc_004.jpg</filename>
+</media>
+</medialist>
+</project>
