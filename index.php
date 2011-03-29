@@ -7,7 +7,11 @@
 
 $cfg['default_controller']="index";
 
-$cfg['base_url']    = "http://localhost/microwiki/";
+//from: http://codeigniter.com/forums/viewthread/81424/
+$cfg['base_url'] = ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == "on") ? "https" : "http");
+$cfg['base_url'] .= "://".$_SERVER['HTTP_HOST'];
+$cfg['base_url'] .= str_replace(basename($_SERVER['SCRIPT_NAME']),"",$_SERVER['SCRIPT_NAME']);
+//$cfg['base_url']    = "http://localhost/microfolio/";
 
 //directories                   
 $cfg['tpl_dir']     = "tpl/";
