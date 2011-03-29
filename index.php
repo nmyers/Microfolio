@@ -5,6 +5,7 @@
  * --------------------------------------------------------------------
  *
  * An open source portfolio CMS for PHP 5.3 or newer! (see todo)
+ * 
  *
  * @author		Nicolas Myers
  * @version             0.1
