@@ -114,6 +114,7 @@ function ctrl_admin_project_list() {
 /**
  * Admin Controller - Project Edit
  * This is where the action is
+ * this is verrrry slow.. maybe because of all the dom stuff
  *
  * @global  $cfg
  * @param <type> $project_name
@@ -138,7 +139,7 @@ function ctrl_admin_project_edit($project_name) {
             $found_imgs[] = $src;
         }
     }
-
+    
     //new images
     $new_imgs = array_diff($dir_imgs, $found_imgs);
     $dom_gallery_node = $xpath->query('//div[@id="gallery"]')->item(0);
@@ -315,22 +316,25 @@ function redirect($action) {
 }
 
 
-function includeJS($filename="") {
+function includeJS($filename) {
     global $cfg;
-    $script_filename = $cfg['style_dir'].$cfg['theme'].$cfg['js_dir'];
-    if ($filename=="") {
-        $script_filename .= str_replace("ctrl_","",$cfg['controller']).".js";
-    } else {
-        $script_filename .= $filename;
-    }
+    $script_filename = $cfg['style_dir'].$cfg['theme'].$cfg['js_dir'].$filename;
     if (file_exists($script_filename)) {
         $script_url = $cfg['base_url'].$script_filename;
         return "<script type=\"text/javascript\" src=\"$script_url\"></script>";
-    } else {
-        return "";
     }
+    return "";
 }
 
+function includeCSS($filename,$media="all") {
+    global $cfg;
+    $css_filename = $cfg['style_dir'].$cfg['theme'].$cfg['css_dir'].$filename;
+    if (file_exists($css_filename)) {
+        $css_url = $cfg['base_url'].$css_filename;
+        return "<link href=\"$css_url\" rel=\"stylesheet\" type=\"text/css\" media=\"$media\" />";
+    }
+    return "";
+}
 
 /*
  * -------------------------------------------------------------------
