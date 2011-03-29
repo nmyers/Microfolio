@@ -7,85 +7,33 @@
 
 $cfg['default_controller']="index";
 
-$cfg['base_url']="http://localhost/microwiki/";
-                   
-$cfg['tpl_dir']   = "tpl";
-$cfg['style_dir'] = "style";
-$cfg['theme']     = "default";
+$cfg['base_url']    = "http://localhost/microwiki/";
 
-$cfg['lib_dir'] = "lib";
-$cfg['projects_dir'] = "projects";
+//directories                   
+$cfg['tpl_dir']     = "tpl/";
+$cfg['style_dir']   = "style/";
+$cfg['theme']       = "default/";
+
+$cfg['lib_dir']      = "lib/";
+$cfg['projects_dir'] = "projects/";
+
 // users/passwords
 $cfg['users'] = array ( 'admin'=>'122442');
 
-
-if (function_exists('realpath') AND @realpath(dirname(__FILE__)) !== FALSE)
-	$cfg['base_dir'] = str_replace("\\", "/", realpath(dirname(__FILE__))).'/';
-
-//------------------------------------------------------------------------------
-//
-//  FONCTIONS CONTROLLERS - micro MVC
-//
-//------------------------------------------------------------------------------
-
-    //controller par défaut
-    function ctrl_index()
-    {
-        redirect ('pagemgr');
-    }
-    
-    function ctrl_admin_project_list() {
-        global $cfg;
-        $output['projects'] = directoryToArray("./".$cfg['projects_dir'], true,'/project\.xml$/');
-        $output['content']=output("project_list.html.php",$output,true);
-        output("main.html.php",$output);
-    }
-    
-    function ctrl_admin_project_edit() {
-        global $cfg;
-        $project_file = $cfg['args'];
-        $project = getProjectData($cfg['args']);  
-        
-        //Loop through all the images in project dir and add new ones to xml
-        $images = directoryToArray("./".dirname($project_file), true,'/\.jpg$/',false);
-        foreach ($images as $image) { 
-            $found = false;
-            foreach ($project->medialist->media as $media) {
-                if ($media->filename==$image) { 
-                    $found = true;
-                    break;
-                }   
-            }
-            if (!$found) {
-                $media = $project->medialist->addChild('media');
-                $media->addChild('filename', $image);
-                $media->addChild('title', '');
-                $media->addChild('caption', '');
-            }
-        }
-        
-        //prepare the view
-        $output['project'] = $project; 
-        $output['project_file'] = $project_file;
-        $output['project_url'] = $cfg['base_url'].dirname($cfg['args']).'/';
-        $output['content']=output("project_edit.html.php",$output,true);
-        output("main.html.php",$output);
-    }
-    
-    function ctrl_admin_project_save() {
-        global $cfg;
-        $project_file = $cfg['args'];
-        $medialist = array_filter(explode(",",$_POST['project_media'] ));
-        $meta = "media[]='".implode("'\nmedia[]='",$medialist)."'";
-        file_put_contents($project_file, $_POST['project_text']."\n>>>>\n".$meta);
-        redirect("admin_project_edit/".$project_file);
+/*
+ * --------------------------------------------------------------------
+ * Public Controllers
+ * --------------------------------------------------------------------
+ */
+ 
+    function ctrl_index() {
+        echo "Hello world";
     }
     
     function ctrl_login() {
         global $cfg;
-        $cfg['theme']='admin';
-        $output['content']=output("login.html.php",array(),true);
-        output("main.html.php",$output);
+        $cfg['theme']='admin/';             
+        output("login.html.php");
     }
     
     function ctrl_dologin() {
@@ -101,72 +49,143 @@ if (function_exists('realpath') AND @realpath(dirname(__FILE__)) !== FALSE)
         redirect("/login");   
     }
     
+/*
+ * --------------------------------------------------------------------
+ * Admin Controllers
+ * --------------------------------------------------------------------
+ *
+ */
+    function ctrl_admin_project_list() {
+        global $cfg;
+        $output['projects'] = getDirs($cfg['projects_dir']);
+        output("project_list.html.php",$output);
+    }   
+    
+    function ctrl_admin_project_edit($project_name) {
+        global $cfg;
+        
+        $project_dir = $cfg['projects_dir'].$project_name.'/';
+        $project_file = $project_dir.'project.html';
+        $html_dom  = getDOM($project_file);
+
+        //get images from directory
+        $dir_imgs  = getFiles($cfg['projects_dir'].$project_name,'/\.(jpg|jpeg)/i');
+
+        //Removes nodes (divs) referencing missing images
+        $xpath = new DOMXpath($html_dom);
+        foreach($xpath->query('//div/img') as $node) {   
+            if (!in_array($src = $node->getAttribute('src'),$dir_imgs)) {
+                $parent_node = $node->parentNode;
+                $parent_node->parentNode->removeChild($parent_node);
+            } else {
+                $found_imgs[] = $src;
+            }
+        }
+        
+        //new images
+        $new_imgs = array_diff($dir_imgs,$found_imgs);
+        $dom_gallery_node = $xpath->query('//div[@id="gallery"]')->item(0);
+        foreach ($new_imgs as $new_img) {
+            $xml = "   <div class=\"media\" >\n";  
+            $xml.= "      <img src=\"$new_img\" />\n";        
+            $xml.= "      <div class=\"caption\" > </div>\n"; //spaces left in div on purpose!
+            $xml.= "   </div>\n";
+            $new_img = $html_dom->createDocumentFragment(); 
+            $new_img->appendXML($xml);
+            $dom_gallery_node->appendChild($new_img);
+        }
+        
+        $html_sxml = simplexml_import_dom($html_dom);
+        
+        //extract the html for the gallery and add the full url
+        $output['gallery'] = array_pop($html_sxml->xpath('//div[@id="gallery"]'))->asXML();
+        $output['gallery'] = str_replace('src="','src="'.$cfg['base_url'].$project_dir,$output['gallery']);
+        
+        $output['title'] = array_pop($html_sxml->xpath('//h1[@id="title"]'));
+        $output['text'] = array_pop($html_sxml->xpath('//div[@id="presentation"]/pre')); 
+        
+        $output['project_name']=$project_name;
+        
+        output("project_edit.html.php",$output);
+    }
+    
+    function ctrl_admin_project_save($project_name) {
+        global $cfg;
+        //file_put_contents('test', var_export($_POST,true));
+        /*
+        $project_file = $cfg['args'];
+        $medialist = array_filter(explode(",",$_POST['project_media'] ));
+        $meta = "media[]='".implode("'\nmedia[]='",$medialist)."'";
+        file_put_contents($project_file, $_POST['project_text']."\n>>>>\n".$meta);
+        redirect("admin_project_edit/".$project_file);
+        */
+    }
+    
+    function ctrl_admin_project_delete($project_name) {
+    
+    }
+    
+    function ctrl_admin_project_create() {
+    
+    }
+
+    function ctrl_admin_project_media_delete() {
+    
+    }
+    
 //------------------------------------------------------------------------------
 //
 //  HELPERS
 //
 //------------------------------------------------------------------------------
-    
-    function getProjectData($project_file)
-    {
-        if (file_exists($project_file)) {
-            $xml = simplexml_load_file($project_file,'SimpleXMLElement', LIBXML_NOCDATA);
-            return $xml;
+
+    function getDOM($file) {
+        if (file_exists($file)) {
+            $raw = str_replace("\r","",file_get_contents($file));
+            $dom = new DOMDocument();
+            $dom->preserveWhiteSpace = false;
+            $dom->strictErrorChecking = FALSE;
+            $dom->loadHTML($raw);
+            return $dom;
         } else {
             exit('Failed to open '.$project_file);
-        } 
+        }
+    }
+        
+    function getFiles($dir,$pattern='/.*/') {
+        $files = scandir($dir);
+        return array_filter( $files, function($elem) use ($pattern) { 
+            return ($elem!='.' && $elem!='..' && preg_match($pattern,$elem)); 
+        });
     }
     
-    function directoryToArray($directory, $recursive,$pattern='/.*/',$includepath=true) {
-    	$array_items = array();
-    	if ($handle = opendir($directory)) {
-    		while (false !== ($file = readdir($handle))) {
-    			if ($file != "." && $file != ".." ) {
-    				if (is_dir($directory. "/" . $file)) {
-    					if($recursive) {
-    						$array_items = array_merge($array_items, directoryToArray($directory. "/" . $file, $recursive,$pattern,$includepath));
-    					}
-    					if ($includepath) $file = $directory . "/" . $file;
-    					if (preg_match($pattern, $file)==false) continue;
-    					$array_items[] = preg_replace("/\/\//si", "/", $file);
-    				} else {
-    					if ($includepath) $file = $directory . "/" . $file;
-    					if (preg_match($pattern, $file)==false) continue;
-    					$array_items[] = preg_replace("/\/\//si", "/", $file);
-    				}
-    			} 
-    		}
-    		closedir($handle);
-    	}
-    	return $array_items;
-    }
-    
-    function normalizeStr($rawStr) {
-        $rawStr=trim($rawStr);
-        $accent     = utf8_decode(" .ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõöøùúûýýþÿ");
-        $noaccent   = utf8_decode("__aaaaaaaceeeeiiiidnoooooouuuuybsaaaaaaaceeeeiiiidnoooooouuuyyby");
-        $normStr    = strtr(trim(html_entity_decode(utf8_decode($rawStr), ENT_NOQUOTES)), $accent, $noaccent);
-        $validChars = 'a-zA-Z0-9-_';
-        $normStr    = preg_replace("/[^$validChars]/", "", $normStr);
-        return strtolower($normStr);
+    /**
+     *  Returns an array of all the directories within $dir, excluding . and ..
+     **/              
+    function getDirs($dir) {
+        $files = scandir($dir);
+        return array_filter( $files, function($elem) use ($dir) { 
+            return ($elem!='.' && $elem!='..' && is_dir($dir.'/'.$elem)); 
+        });
     }
 
 //------------------------------------------------------------------------------
 //
-//  CORE - micro MVC
+//  CORE
 //
 //------------------------------------------------------------------------------
         
     function output($tpl,$contentArray=array(),$returnToString=FALSE) {
         global $cfg;
-        $tpl=$cfg['base_dir'].$cfg['style_dir'].'/'.$cfg['theme'].'/'.$cfg['tpl_dir'].'/'.$tpl;
+        $tpl=$cfg['style_dir'].$cfg['theme'].$cfg['tpl_dir'].$tpl;
         extract($contentArray, EXTR_OVERWRITE);
+        $output = $contentArray;
         if ($returnToString) {
             ob_start();
             include($tpl);
-            $output = ob_get_contents();
+            $content = ob_get_contents();
             ob_end_clean();
-            return $output;
+            return $content;
         } else {
             include($tpl);
         }
@@ -175,6 +194,18 @@ if (function_exists('realpath') AND @realpath(dirname(__FILE__)) !== FALSE)
     function makeUrl($action) {
         global $cfg;
         return $cfg['base_url'].'index.php/'.$action;
+    }
+    
+    function addScript($src) {
+        global $cfg;
+        if (strpos($src,"://") === false) $src = $cfg['base_url'].$cfg['style_dir'].$cfg['theme']."js/".$src;
+        $cfg['js_files'][]="<script type='text/javascript' src='$src' ></script>";
+    }
+    
+    function getScripts() {
+        global $cfg;
+        if (!isset($cfg['js_files'])) return "";
+        return implode("\n      ",$cfg['js_files']);
     }
    
     function redirect($action) {
@@ -206,7 +237,7 @@ if (function_exists('realpath') AND @realpath(dirname(__FILE__)) !== FALSE)
             return false;
     }
         
-    function frt_ctrl() {
+    function front_ctrl() {
         global $cfg;
         session_start();        
         //read url
@@ -215,14 +246,12 @@ if (function_exists('realpath') AND @realpath(dirname(__FILE__)) !== FALSE)
         $controller = 'ctrl_'.array_shift($args);
         $cfg['args'] = implode('/',$args);
         if (!function_exists($controller)) $controller='ctrl_'.$cfg['default_controller'];
-        
         //if controller is admin then check login
         if  (stripos($controller,"_admin_")!==false) {
             if (!is_logged()) redirect("/login");
-            $cfg['theme']='admin';
+            $cfg['theme']='admin/';
         }
-        
         call_user_func_array($controller,$args);
     }
 
-if (!defined('ALLOWINCLUDE')) frt_ctrl();
+if (!defined('ALLOWINCLUDE')) front_ctrl();
