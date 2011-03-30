@@ -15,12 +15,19 @@
  * --------------------------------------------------------------------
  * Configuration
  * --------------------------------------------------------------------
+ *
+ * @todo: basic config could be moved to an ini or php file at the root
+ *        if missing the system calls a simple install.
+ *        this might be necessary at least for username/password setting
  */
 
 $cfg = array (
 
     //default controller
     'default_ctrl' => "index",
+    
+    //Empty if htaccess enabled
+    'base_index'   => "index.php/",
 
     //dir names
     'lib_dir'      => "lib/",
@@ -315,24 +322,6 @@ function ctrl_admin_project_media_delete($project_name) {
  */
 
 /**
- * Loads an HTML file and returns the DOM document
- * @param string $file The HTML file
- * @return DOMDocument
- */
-function getDOM($file) {
-    if (file_exists($file)) {
-        $raw = str_replace("\r", "", file_get_contents($file));
-        $dom = new DOMDocument();
-        $dom->preserveWhiteSpace = false;
-        $dom->strictErrorChecking = FALSE;
-        $dom->loadHTML($raw);
-        return $dom;
-    } else {
-        exit('Failed to open ' . $project_file);
-    }
-}
-
-/**
  * Returns an array of all the files matching the pattern
  * @todo This function forces the use of php 5.3 because of the 'use' keyword
  *       a while loop might be better
@@ -422,7 +411,7 @@ function output($tpl, $contentArray=array(), $returnToString=FALSE) {
  */
 function makeUrl($action) {
     global $cfg;
-    return $cfg['base_url'] . 'index.php/' . $action;
+    return $cfg['base_url'] . $cfg['base_index'] . $action;
 }
 
 /**
@@ -464,6 +453,7 @@ function includeCSS($filename,$media="all") {
 
 /**
  * Crude login system
+ * @todo this needs to change to something a bit more secure
  *
  * @global array $cfg
  * @param  string $username

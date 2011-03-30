@@ -1,5 +1,8 @@
-/* 
+/**
  * Admin Project Edit
+ *
+ *
+ *
  * --
  * 
  */
@@ -46,7 +49,7 @@ $(function() {
     }
 
     function reloadGallery() {
-        $('#gallery').load(base_url+'index.php/admin_project_edit/'+project_name+' #gallery',
+        $('#gallery').load(base_url+base_index+'admin_project_edit/'+project_name+' #gallery',
         function(){
             createSortable();
             addControls();
@@ -54,8 +57,7 @@ $(function() {
     }
 
     function saveProject() {
-
-        $.post(base_url+"index.php/admin_project_save/"+project_name,{
+        $.post(base_url+base_index+"admin_project_save/"+project_name,{
            ajax: true,
            title: $("#project_title").attr("value"),
            text:  $("#project_text").html(),
@@ -70,7 +72,7 @@ $(function() {
     }
 
     function deleteMedia(media_file) {
-        $.post(base_url+"index.php/admin_project_media_delete/"+project_name+'/'+media_file,{
+        $.post(base_url+base_index+"admin_project_media_delete/"+project_name+'/'+media_file,{
            ajax: true,
            project_name: project_name,
            media_file: media_file
