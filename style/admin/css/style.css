@@ -1,3 +1,8 @@
+/**
+ * Admin css
+ * -> this needs to be redone from scratch!
+ */
+
 #gallery { width:900px;}
 	.media { margin: 3px 3px 3px 0; padding: 1px; float: left; width: 100px; height: 100px; text-align: center;background:#ccc; overflow:hidden; }
     .media img { width: 80px; }

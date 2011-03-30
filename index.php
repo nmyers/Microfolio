@@ -102,31 +102,37 @@ function ctrl_logout() {
  */
 
 /**
- * Admin Controller - Project Edit
- * @todo ...a lot
+ * Admin Controller - Projects menu
+ * 
+ * This parses the 'projects.html' file and sync it with the projects folders
+ * The view takes care of reordering projects and adding sections (jquery)
+ *
  * @global  $cfg
  */
 function ctrl_admin_projects_menu() {
     global $cfg;
-    
-    //load html parser
-    include_lib('simple_html_dom/simple_html_dom.php');
 
+    // loads and parse 'projects.html'
+    include_lib('simple_html_dom/simple_html_dom.php');
     $html = file_get_html($cfg['projects_dir'].'projects.html');
+
+    // gets an array of all the project folders
     $projects_dir = getDirs($cfg['projects_dir']);
 
+    /** Renoves all the project DIVs with no matching folders (deleted)
+     */
     $projects_found = array();
     foreach($html->find('#menu-projects .project a') as $project_link) {
         $project_name = str_replace("/project.html","",$project_link->href);
         if(!in_array($project_name, $projects_dir)) {
-            //folder does not exists -> remove element
             $project_link->parent()->parent()->outertext = "";
         } else {
             $projects_found[] = $project_name;
         }
     }
 
-    //add links for new project folders
+    /** Adds new DIVs for new project folders
+     */
     $projects_new = array_diff($projects_dir,$projects_found);
     $menu_dom = $html->find("#menu-projects",0);
     foreach ($projects_new as $project_new) {
@@ -134,6 +140,9 @@ function ctrl_admin_projects_menu() {
         $menu_dom->innertext = $menu_dom->innertext .$new_project_link;
     }
 
+    /**
+     * @todo adds the class sortable for the output (this could be done in js)
+     */
     $html->find("#menu-projects",0)->class="sortable";
     $output['menu'] = $html->find("#menu-projects",0);
     
@@ -141,7 +150,9 @@ function ctrl_admin_projects_menu() {
 }
 
 /**
- * Saves the menu
+ * Admin Controller - Projects menu save
+ * Ajax call only. Saves the menu in 'projects.html'
+ *
  * @global array $cfg
  */
 function ctrl_admin_projects_menu_save() {
@@ -151,6 +162,9 @@ function ctrl_admin_projects_menu_save() {
     include_lib('simple_html_dom/simple_html_dom.php');
     include_lib('htmlindent/htmlindent.php');
 
+    /**
+     * Cleans up the html: removes the controls and inline styles
+     */
     $menuhtml = str_get_html($_POST['menuhtml']);
     foreach($menuhtml->find('.controls') as $e) $e->outertext = '';
     foreach($menuhtml->find('li[style]') as $e) $e->style = null;;
@@ -164,8 +178,6 @@ function ctrl_admin_projects_menu_save() {
 
 /**
  * Admin Controller - Project Edit
- * This is where the action is
- * this is verrrry slow.. maybe because of all the dom stuff
  *
  * @global  $cfg
  * @param string $project_name
@@ -322,7 +334,8 @@ function getDOM($file) {
 
 /**
  * Returns an array of all the files matching the pattern
- * @todo This function forces the use of php 5.3! a while loop might be better
+ * @todo This function forces the use of php 5.3 because of the 'use' keyword
+ *       a while loop might be better
  *
  * @param  string   $dir
  * @param  string   $pattern  Regex pattern to filter the files
