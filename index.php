@@ -4,7 +4,7 @@
  * Microfolio
  * --------------------------------------------------------------------
  *
- * An open source portfolio CMS for PHP 5.3 or newer! (see todo)
+ * An open source portfolio CMS for PHP 5
  * 
  *
  * @author		Nicolas Myers
@@ -192,7 +192,6 @@ function ctrl_admin_projects_menu_save() {
 function ctrl_admin_project_edit($project_name) {
     global $cfg;
 
-    
     $project_dir = $cfg['projects_dir'] . $project_name . '/';
     $project_file = $project_dir . 'project.html';
 
@@ -277,6 +276,11 @@ function ctrl_admin_project_save($project_name) {
     echo '1';
 }
 
+/**
+ *
+ * @global $cfg $cfg
+ * @param <type> $project_name
+ */
 function ctrl_admin_project_delete($project_name) {
     global $cfg;
     checkAjax();
@@ -288,6 +292,11 @@ function ctrl_admin_project_delete($project_name) {
     echo '1';
 }
 
+/**
+ *
+ * @global $cfg $cfg
+ * @param <type> $project_name
+ */
 function ctrl_admin_project_create($project_name) {
     global $cfg;
     checkAjax();
@@ -303,6 +312,11 @@ function ctrl_admin_project_create($project_name) {
     echo '1';
 }
 
+/**
+ *
+ * @global $cfg $cfg
+ * @param <type> $project_name
+ */
 function ctrl_admin_project_media_delete($project_name) {
     global $cfg;
     checkAjax();
@@ -332,9 +346,12 @@ function ctrl_admin_project_media_delete($project_name) {
  */
 function getFiles($dir, $pattern='/.*/') {
     $files = scandir($dir);
-    return array_filter($files, function($elem) use ($pattern) {
-                return ($elem != '.' && $elem != '..' && preg_match($pattern, $elem));
-            });
+    $result = array();
+    foreach ($files as $file) {
+        if ($file != '.' && $file != '..' && preg_match($pattern, $file))
+                $result[] = $file;
+    }
+    return $result;
 }
 
 /**
@@ -346,9 +363,11 @@ function getFiles($dir, $pattern='/.*/') {
  */
 function getDirs($dir) {
     $files = scandir($dir);
-    return array_filter($files, function($elem) use ($dir) {
-                return ($elem != '.' && $elem != '..' && is_dir($dir . '/' . $elem));
-            });
+    foreach ($files as $file) {
+        if ($elem != '.' && $elem != '..' && is_dir($dir . '/' . $elem))
+                $result[] = $file;
+    }
+    return $result;
 }
 
 /**
@@ -380,11 +399,11 @@ function checkAjax() {
  * This function will return the content to a string instead of printing it out
  * if the param $returnToString is set to true.
  *
- * @global array $cfg
- * @param string $tpl
- * @param <mixed> $contentArray
- * @param boolean $returnToString
- * @return string Ret
+ * @global array   $cfg
+ * @param  string  $tpl
+ * @param  array   $contentArray
+ * @param  boolean $returnToString
+ * @return string
  */
 function output($tpl, $contentArray=array(), $returnToString=FALSE) {
     global $cfg;
@@ -424,7 +443,12 @@ function redirect($action) {
     die();
 }
 
-
+/**
+ *
+ * @global $cfg $cfg
+ * @param  string $filename
+ * @return string
+ */
 function includeJS($filename) {
     global $cfg;
     $script_filename = $cfg['style_dir'].$cfg['theme'].$cfg['js_dir'].$filename;
