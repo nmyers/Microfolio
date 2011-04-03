@@ -2,14 +2,19 @@
  * Admin css
  * -> this needs to be redone from scratch!
  */
+ #project_text {
+     width: 500px;
+     height: 300px;
+
+}
 
 #gallery { width:900px;}
-	.media { margin: 3px 3px 3px 0; padding: 1px; float: left; width: 100px; height: 100px; text-align: center;background:#ccc; overflow:hidden; }
-    .media img { width: 80px; }
+	.media { margin: 3px 3px 3px 0; padding: 1px; float: left; width: 70px; height: 70px; text-align: center;background:#ccc; overflow:hidden; }
+    .media img { width: 70px; }
 
-.media .controls {display:block;position:absolute;}
+.media .controls {display:block;position:absolute;margin-top:70px;font-size:9px;}
 .media a { margin-right:2px;}
-
+.media .caption { display:none;}
 
 		body {
 			color: #333;

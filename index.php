@@ -86,7 +86,7 @@ function ctrl_login() {
 function ctrl_dologin() {
     if (miniLog($_REQUEST['username'], $_REQUEST['password'])) {
         //@todo: change to var in config
-        redirect("admin_project_list");
+        redirect("admin_projects_menu");
     } else {
         redirect("login");
     }
@@ -216,7 +216,7 @@ function ctrl_admin_project_edit($project_name) {
     //add links for new project folders
     $gallery_dom = $html->find("#gallery",0);
     foreach ($new_imgs as $new_img) {
-        $div = "<div class=\"media\" >";
+        $div = "<div class=\"media image\" >";
         $div.= "   <img src=\"$new_img\" />";
         $div.= "   <div class=\"caption\" > </div>"; //spaces left in div on purpose!
         $div.= "</div>";
@@ -227,7 +227,7 @@ function ctrl_admin_project_edit($project_name) {
     $gallery_html = $html->find("#gallery",0)->outertext;
     $output['gallery'] = str_replace('src="', 'src="'.$cfg['base_url'].$project_dir, $gallery_html);
     $output['title'] = $html->find("h1",0)->innertext;
-    $output['text'] = $html->find("#presentation pre",0)->innertext;
+    $output['text'] = $html->find("#presentation",0)->innertext;
     $output['project_name'] = $project_name;
 
     output("project_edit.html.php", $output);
@@ -249,7 +249,6 @@ function ctrl_admin_project_save($project_name) {
 
     include_lib('simple_html_dom/simple_html_dom.php');
     include_lib('htmlindent/htmlindent.php');
-    include_lib('markdown/markdown.php');
 
     $html = file_get_html($project_file);
 
@@ -259,14 +258,13 @@ function ctrl_admin_project_save($project_name) {
     foreach($gallery->find('img') as $img) {
         $img->src = substr($img->src, strrpos($img->src,"/")+1);
     }
-    $html->find("#gallery",0)->innertext = clean_html_code($gallery);
+    $html->find("#gallery",0)->innertext = "\n\n".clean_html_code($gallery)."\n\n";
 
     //process and adds the text
-    $raw_text = html_entity_decode($_POST['text']);
-    $processed_text = Markdown($raw_text);
-    $html_text = "<pre class='unprocessed' >".$raw_text."</pre>\n";
-    $html_text .= "<div class='processed' >".$processed_text."</div>";
-    $html->find("#presentation",0)->innertext = $html_text;
+    //@todo use a strip tag to cleanup the code received
+    $html_text = clean_html_code($_POST['text']);
+
+    $html->find("#presentation",0)->innertext = "\n\n".$html_text."\n\n";
 
     //adds the text
     $html->find("#title",0)->innertext = $_POST["title"];
@@ -364,7 +362,7 @@ function getFiles($dir, $pattern='/.*/') {
 function getDirs($dir) {
     $files = scandir($dir);
     foreach ($files as $file) {
-        if ($elem != '.' && $elem != '..' && is_dir($dir . '/' . $elem))
+        if ($file != '.' && $file != '..' && is_dir($dir . '/' . $file))
                 $result[] = $file;
     }
     return $result;

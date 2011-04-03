@@ -3,11 +3,21 @@
  * 
  */
 
+$.fn.outer = function(val){
+    if(val){
+        $(val).insertBefore(this);
+        $(this).remove();
+    }
+    else{ return $("<div>").append($(this).clone()).html(); }
+}
+
 $(function() {
     createSortable();
     createUploader();
     addControls();
+    initWysiwyg();
 
+    $("#edit_media_dialog").hide();
     /**
      * Buttons
      */
@@ -16,6 +26,22 @@ $(function() {
         return false;
     })
 })
+
+function showMessage(message) {
+    $('#message').remove();
+    $('body').prepend('<div id="message" >'+message+'</div>');
+    $('#message').show().delay(1000).fadeOut(500,function(){$('#message').remove();});
+}
+
+
+function initWysiwyg() {
+
+    $('#project_text').uEditor({
+            toolbarItems : ['bold','italic','link','formatblock','htmlsource'],
+            containerClass : 'uEditor'
+    });
+    
+}
 
 /**
  * Adds buttons to thumbnails
@@ -29,7 +55,8 @@ function addControls() {
      * Edit caption
      */
     $( "#gallery .media a.edit" ).click(function(){
-        alert("edit "+$(this).text());
+        editMedia($(this).parent().parent());
+        return false;
     })
 
     /**
@@ -39,6 +66,7 @@ function addControls() {
         var src = $('img',$(this).parent().parent()).attr('src');
         var filename = src.substring(src.lastIndexOf('/')+1);
         deleteMedia(filename);
+        return false;
     })
 }
 
@@ -54,6 +82,7 @@ function createUploader() {
         allowedExtensions: ['jpg'],
         onComplete: function(id, fileName, responseJSON){
             reloadGallery();
+           //$(".qq-upload-list").text("");
         },
         params: {
             folder: project_name
@@ -65,7 +94,11 @@ function createUploader() {
  * Initialise the sortable thumbnails
  */
 function createSortable() {
-    $( "#gallery" ).sortable();
+    $( "#gallery" ).sortable({
+       update: function(event, ui) {
+            saveProject();
+        }
+    });
 }
 
 /**
@@ -83,17 +116,81 @@ function reloadGallery() {
  * Saves the project -> ajax
  */
 function saveProject() {
+    //fetch the wysiwyg editor object to update the textarea
+    var editor = $('#project_text').data('editor');
+    editor.updateuEditorInput();
+    
     $.post(base_url+base_index+"admin_project_save/"+project_name,{
         ajax: true,
         title: $("#project_title").attr("value"),
-        text:  $("#project_text").html(),
+        text:  $("#project_text").val(),
         gallery: $("#gallery").html()
     },function(data) {
         if (data=='1') {
-            alert("saved");
+            showMessage("saved");
         } else {
-            alert(data);
+            showMessage(data);
         }
+    })
+}
+
+function editMedia(media_div) {
+    //hide the gallery and show the dialog
+    $("#gallery_container").hide();
+    $("#edit_media_dialog").show();
+
+    //unbind click events
+    $("#edit_media_controls .save").unbind('click');
+    $("#edit_media_controls .cancel").unbind('click');
+
+    //populate the form
+
+    //if it's an image
+    if (media_div.hasClass('image')) {
+        $("#edit_image_form").show();
+        $("#edit_embed_form").hide();
+
+        //populate the form
+        $("#edit_image_form img").attr("src",$("img",media_div).attr("src"));
+        $("#image_title").val($("img",media_div).attr("alt"));
+        $("#image_caption").val($(".caption",media_div).text());
+
+        //buttons
+        $("#edit_media_controls .save").click(function(){
+            $("img",media_div).attr("alt",$("#image_title").val());
+            $(".caption",media_div).text($("#image_caption").val());
+            $("#gallery_container").show();
+            $("#edit_media_dialog").hide();
+            saveProject();
+        })
+    }
+
+    if (media_div.hasClass('embed')) {
+        $("#edit_image_form").hide();
+        $("#edit_embed_form").show();
+
+        //populate the form
+        $("#edit_embed_form .preview").html($("a.embed",media_div).outer());
+        $("#embed_url").val($("a.embed",media_div).attr("href"));
+        $("#embed_title").val($("a.embed",media_div).attr("title"));
+        $("#embed_caption").val($(".caption",media_div).text());
+
+        //buttons
+        $("#edit_media_controls .save").click(function(){
+            $("a.embed",media_div).attr("href",$("#embed_url").val());
+            $("a.embed",media_div).attr("title",$("#embed_title").val());
+            $(".caption",media_div).text($("#embed_caption").val());
+
+            $("#gallery_container").show();
+            $("#edit_media_dialog").hide();
+            saveProject();
+        })
+    }
+
+    //cancel button
+    $("#edit_media_controls .cancel").click(function(){
+        $("#gallery_container").show();
+        $("#edit_media_dialog").hide();
     })
 }
 
@@ -109,7 +206,7 @@ function deleteMedia(media_file) {
         if (data=='1') {
             reloadGallery();
         } else {
-            alert("error deleting media");
+            showMessage("error deleting media");
         }
     })
 }
