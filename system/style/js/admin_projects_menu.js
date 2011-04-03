@@ -190,7 +190,7 @@ function addControls() {
      * Publish or unpublish a project by toggling a class
      */
     $(".controls .bt-publish").click(function(){
-        $(this).parent().parent().toggleClass("prj-publish");
+        $(this).parent().parent().toggleClass("prj-unpublished");
         return false;
     })
 

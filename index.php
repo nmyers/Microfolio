@@ -30,9 +30,10 @@ $cfg = array (
     'base_index'   => "index.php/",
 
     //dir names
-    'lib_dir'      => "lib/",
+    'lib_dir'      => "system/lib/",
     'projects_dir' => "projects/",
     'style_dir'    => "style/",
+    'admin_style_dir' => 'system/style/',
     'tpl_dir'      => "tpl/",
     'js_dir'       => "js/",
     'css_dir'      => "css/",
@@ -65,6 +66,61 @@ $cfg['base_dir'] = str_replace("\\","/",rtrim($cfg['base_dir'], '/').'/');
  */
 function ctrl_index() {
     echo "Hello micro";
+}
+
+function ctrl_project($project_name) {
+    global $cfg;
+
+    $project_dir = $cfg['projects_dir'] . $project_name . '/';
+    $project_file = $project_dir . 'project.html';
+
+    if (!file_exists($project_file)) redirect ();
+
+    //load html parser
+    include_lib('simple_html_dom/simple_html_dom.php');
+    $menu_html    = file_get_html($cfg['projects_dir'].'projects.html');
+
+    //remove unpublished project from the list
+    foreach($menu_html->find('div[class*=prj-unpublished]') as $e) $e->parent()->outertext = '';
+    $menu_html = str_get_html($menu_html->save());
+
+    //redirect if the project is not found (= not published)
+    if(!$prj=$menu_html->find("a[href^=$project_name/]",0)) redirect();
+
+    //parse the project classes = project settings
+    $prj_classes = explode(" ",$prj->parent()->class);
+    $prj_settings = array();
+    foreach ($prj_classes as $class) {
+        if (stripos($class,'-')!==false) {
+            list($key,$val) = explode('-',$class);
+            $prj_settings[$key]=$val;
+        }
+    }
+
+    $project_html = file_get_html($project_file);
+
+    //rewrite images urls
+    foreach($project_html->find('div.image img') as $e) $e->src = $cfg['base_url'].$project_dir.$e->src;
+
+    //Check for a project template
+    $project_template = "project_default.html.php";
+    if (isset($prj_settings['template'])) {
+        $template_file = "project_".$prj_settings['template'].".html.php";
+        if (file_exists($cfg['style_dir'] . $cfg['theme'] . $cfg['tpl_dir'] . $template_file)) {
+            $project_template = $template_file;
+        }
+    }
+
+    $output['menu'] = $menu_html;
+    $output['project'] = array (
+        'title'        => $project_html->find("#title",0)->innertext,
+        'presentation' => $project_html->find("#presentation",0),
+        'gallery'      => $project_html->find("#gallery",0),
+        'settings'     => $prj_settings
+    );
+
+    //show the project
+    output($project_template,$output);
 }
 
 /**
@@ -174,7 +230,7 @@ function ctrl_admin_projects_menu_save() {
      */
     $menuhtml = str_get_html($_POST['menuhtml']);
     foreach($menuhtml->find('.controls') as $e) $e->outertext = '';
-    foreach($menuhtml->find('li[style]') as $e) $e->style = null;;
+    foreach($menuhtml->find('li[style]') as $e) $e->style = null;
 
     $output['menuhtml'] = clean_html_code($menuhtml->save());
     $html = output("empty_projects_menu.html.php", $output, true);
@@ -405,7 +461,15 @@ function checkAjax() {
  */
 function output($tpl, $contentArray=array(), $returnToString=FALSE) {
     global $cfg;
-    $tpl = $cfg['style_dir'] . $cfg['theme'] . $cfg['tpl_dir'] . $tpl;
+    
+    if($cfg['in_admin']) {
+        $tpl = $cfg['admin_style_dir'] . $cfg['tpl_dir'] . $tpl;
+    } else {
+        $tpl = $cfg['style_dir'] . $cfg['theme'] . $cfg['tpl_dir'] . $tpl;
+    }
+
+    if (!file_exists($tpl)) redirect();
+
     extract($contentArray, EXTR_OVERWRITE);
     $output = $contentArray;
     if ($returnToString) {
@@ -436,7 +500,7 @@ function makeUrl($action) {
  *
  * @param string $action The URI
  */
-function redirect($action) {
+function redirect($action="") {
     header("Location: " . makeUrl($action));
     die();
 }
@@ -449,7 +513,12 @@ function redirect($action) {
  */
 function includeJS($filename) {
     global $cfg;
-    $script_filename = $cfg['style_dir'].$cfg['theme'].$cfg['js_dir'].$filename;
+    if($cfg['in_admin']) {
+        $script_filename = $cfg['admin_style_dir'].$cfg['js_dir'].$filename;
+    } else {
+        $script_filename = $cfg['style_dir'].$cfg['theme'].$cfg['js_dir'].$filename;
+    }
+    
     if (file_exists($script_filename)) {
         $script_url = $cfg['base_url'].$script_filename;
         return "<script type=\"text/javascript\" src=\"$script_url\"></script>";
@@ -459,7 +528,13 @@ function includeJS($filename) {
 
 function includeCSS($filename,$media="all") {
     global $cfg;
-    $css_filename = $cfg['style_dir'].$cfg['theme'].$cfg['css_dir'].$filename;
+    
+    if($cfg['in_admin']) {
+        $css_filename = $cfg['admin_style_dir'].$cfg['css_dir'].$filename;
+    } else {
+        $css_filename = $cfg['style_dir'].$cfg['theme'].$cfg['css_dir'].$filename;
+    }
+    
     if (file_exists($css_filename)) {
         $css_url = $cfg['base_url'].$css_filename;
         return "<link href=\"$css_url\" rel=\"stylesheet\" type=\"text/css\" media=\"$media\" />";
@@ -545,10 +620,10 @@ function front_ctrl() {
         $cfg['controller'] = 'ctrl_' . $cfg['default_ctrl'];
 
     //Checks the login if it's an admin controller
+    $cfg['in_admin'] = false;
     if (stripos($cfg['controller'], "_admin_") !== false) {
-        if (!is_logged())
-            redirect("/login");
-        $cfg['theme'] = 'admin/';
+        if (!is_logged()) redirect("/login");
+        $cfg['in_admin'] = true;
     }
 
     //Calls the controller function
