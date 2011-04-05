@@ -112,6 +112,15 @@ function ctrl_logout() {
     redirect("/login");
 }
 
+/**
+ * Dynamic image resizing using jit_image_manipulation class
+ * @see https://github.com/pointybeard/jit_image_manipulation
+ */
+function ctrl_image() {
+    include_lib('jit_image_manipulation/image.php');
+}
+
+
 /*
  * --------------------------------------------------------------------
  * ADMIN CONTROLLERS
@@ -222,7 +231,9 @@ function ctrl_admin_project_edit($project_name) {
     $gallery_dom = $html->find("#gallery",0);
     foreach ($new_imgs as $new_img) {
         $div = "<div class=\"media image\" >";
-        $div.= "   <img src=\"$new_img\" alt=\"\" />";
+        $div.= "   <a href=\"$new_img\" title=\"$new_img\" class=\"image\" >";
+        $div.= "     <img src=\"$new_img\" alt=\"$new_img\" />";
+        $div.= "   </a>";
         $div.= "   <div class=\"caption\" > </div>"; //spaces left in div on purpose!
         $div.= "</div>";
         $gallery_dom->innertext = $gallery_dom->innertext .$div;
@@ -230,7 +241,7 @@ function ctrl_admin_project_edit($project_name) {
 
     //prepare vars for template
     $gallery_html = $html->find("#gallery",0)->outertext;
-    $output['gallery'] = str_replace('src="', 'src="'.cfg('base_url').$project_dir, $gallery_html);
+    $output['gallery'] = str_replace('src="', 'src="'.cfg('base_url').'image/2/72/72/5/'.$project_name.'/', $gallery_html);
     $output['title'] = $html->find("h1",0)->innertext;
     $output['text'] = $html->find("#presentation",0)->innertext;
     $output['project_name'] = $project_name;
@@ -542,14 +553,13 @@ function front_ctrl() {
         $uri = str_replace(dirname($_SERVER['SCRIPT_NAME']),'',$_SERVER['REQUEST_URI']);
     }
 
+
     $args = @explode("/", ltrim($uri,'/'));
     if (!$args) $args = array($cfg['default_ctrl']);
     $cfg['controller'] = 'ctrl_' . array_shift($args);
     $cfg['args'] = implode('/', $args);
 
-    //print $cfg['controller'];
-    //die();
-    
+
     //Defines the controller if it exists
     if (!function_exists($cfg['controller']))
         $cfg['controller'] = 'ctrl_' . $cfg['default_ctrl'];
@@ -578,10 +588,12 @@ function loadConfig() {
      * These are core settings, merged with config.php
      */
     $cfg = array (
+        'cache_images'    => true,
         //default controller
         'default_ctrl'    => "index",
 
         //dir names
+        'cache_dir'       => 'system/cache/',
         'admin_dir'       => 'system/',
         'admin_style_dir' => 'system/style/',
         'lib_dir'         => "system/lib/",
@@ -654,4 +666,5 @@ function loadConfig() {
 }
 
 //Launches the front controlller if this file is not an include
+// = broken (doesn't resolve docroot properly)
 if (!defined('ALLOWINCLUDE')) front_ctrl();

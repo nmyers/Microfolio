@@ -8,7 +8,7 @@ $.fn.outer = function(val){
         $(val).insertBefore(this);
         $(this).remove();
     }
-    else{ return $("<div>").append($(this).clone()).html(); }
+    else{return $("<div>").append($(this).clone()).html();}
 }
 
 $(function() {
@@ -23,6 +23,11 @@ $(function() {
      */
     $('#saveproject').click(function() {
         saveProject();
+        return false;
+    })
+
+     $('#addembed').click(function() {
+        addEmbed();
         return false;
     })
 })
@@ -41,6 +46,20 @@ function initWysiwyg() {
             containerClass : 'uEditor'
     });
     
+}
+
+function addEmbed() {
+    //add html and go to edit
+    html  = '<div class="media embed">';
+    html += '   <a href="" class="embed" title="" >';
+    html += '      EMBED';
+    html += '   </a>';
+    html += '   <div class="caption">';
+    html += '  </div>';
+    html += '</div>';
+    $("#gallery").prepend(html);
+    addControls();
+    editMedia($("#gallery .media:eq(0)"));
 }
 
 /**
@@ -81,8 +100,9 @@ function createUploader() {
         action: base_url+base_index+"admin_project_media_upload/"+project_name+"/",
         allowedExtensions: ['jpg'],
         onComplete: function(id, fileName, responseJSON){
+            //alert(fileName);
             reloadGallery();
-            $(".qq-upload-list").delay(1000).text("");
+            //$(".qq-upload-list").delay(1000).text("");
         }
     });
 }
@@ -92,9 +112,9 @@ function createUploader() {
  */
 function createSortable() {
     $( "#gallery" ).sortable({
-       /*update: function(event, ui) {
+       update: function(event, ui) {
             saveProject();
-        }*/
+        }
     });
 }
 
@@ -149,12 +169,13 @@ function editMedia(media_div) {
 
         //populate the form
         $("#edit_image_form img").attr("src",$("img",media_div).attr("src"));
-        $("#image_title").val($("img",media_div).attr("alt"));
+        $("#image_title").val($("a",media_div).attr("title"));
         $("#image_caption").val($(".caption",media_div).text());
 
         //buttons
         $("#edit_media_controls .save").click(function(){
             $("img",media_div).attr("alt",$("#image_title").val());
+            $("a",media_div).attr("title",$("#image_title").val());
             $(".caption",media_div).text($("#image_caption").val());
             $("#gallery_container").show();
             $("#edit_media_dialog").hide();

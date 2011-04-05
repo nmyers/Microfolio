@@ -1,6 +1,7 @@
 <?php output('_header.html.php',$output); ?>
 
     <?=includeCSS("uEditor.css");?>
+<?=includeCSS("fileuploader.css");?>
 
     <!-- custom javascript -->
     <?=includeJS("jquery-ui-1.8.11.custom.min.js");?>
@@ -25,7 +26,8 @@
     <textarea id="project_text" name="project_text" ><?=$text?></textarea>
     
     <div id="file-uploader"></div>
-
+    <a href="#" id="addembed" >add embed</a>
+    
     <div id="gallery_container" >
     <?php print $gallery ?>
     </div>
