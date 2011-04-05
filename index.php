@@ -13,49 +13,6 @@
 
 /*
  * --------------------------------------------------------------------
- * Configuration
- * --------------------------------------------------------------------
- *
- * @todo: basic config could be moved to an ini or php file at the root
- *        if missing the system calls a simple install.
- *        this might be necessary at least for username/password setting
- */
-
-$cfg = array (
-
-    //default controller
-    'default_ctrl' => "index",
-    
-    //Empty if htaccess enabled
-    'base_index'   => "index.php/",
-
-    //dir names
-    'lib_dir'      => "system/lib/",
-    'projects_dir' => "projects/",
-    'style_dir'    => "style/",
-    'admin_style_dir' => 'system/style/',
-    'tpl_dir'      => "tpl/",
-    'js_dir'       => "js/",
-    'css_dir'      => "css/",
-    'theme'        => "default/",
-
-    //users
-    'users'        => array('admin' => '122442'),
-);
-
-/**
- * Automatic Base URL
- * from: http://codeigniter.com/forums/viewthread/81424/
- */
-$cfg['base_url']  = "http://" . $_SERVER['HTTP_HOST'];
-$cfg['base_url'] .= str_replace(basename($_SERVER['SCRIPT_NAME']), "", $_SERVER['SCRIPT_NAME']);
-//$cfg['base_url']  = "http://localhost/microfolio";
-
-$cfg['base_dir'] = realpath('.').'/';
-$cfg['base_dir'] = str_replace("\\","/",rtrim($cfg['base_dir'], '/').'/');
-
-/*
- * --------------------------------------------------------------------
  * PUBLIC CONTROLLERS
  * --------------------------------------------------------------------
  */
@@ -129,7 +86,7 @@ function ctrl_project($project_name) {
  */
 function ctrl_login() {
     global $cfg;
-    $cfg['theme'] = 'admin/';
+    $cfg['in_admin'] = true;
     output("login.html.php");
 }
 
@@ -140,7 +97,7 @@ function ctrl_login() {
  * @global array $cfg
  */
 function ctrl_dologin() {
-    if (miniLog($_REQUEST['username'], $_REQUEST['password'])) {
+    if (miniLog($_POST['username'], $_POST['password'])) {
         //@todo: change to var in config
         redirect("admin_projects_menu");
     } else {
@@ -468,7 +425,7 @@ function output($tpl, $contentArray=array(), $returnToString=FALSE) {
         $tpl = $cfg['style_dir'] . $cfg['theme'] . $cfg['tpl_dir'] . $tpl;
     }
 
-    if (!file_exists($tpl)) redirect();
+    //if (!file_exists($tpl)) redirect();
 
     extract($contentArray, EXTR_OVERWRITE);
     $output = $contentArray;
@@ -559,11 +516,9 @@ function includeCSS($filename,$media="all") {
  */
 function miniLog($username, $password) {
     global $cfg;
-    if (isset($cfg['users'][$username])) {
-        if ($password == $cfg['users'][$username]) {
+    if ($cfg['username'] == $username && $cfg['password'] == $password) {
             $_SESSION['islogged'] = true;
             return true;
-        }
     }
     return false;
 }
@@ -604,17 +559,28 @@ function is_logged() {
 function front_ctrl() {
     global $cfg;
 
+    loadConfig();
+
     //first thing to do (to make the login system work)
     session_start();
 
     //Read the PATH INFO to divide the request in segments
     //The first one will be used as the controller
+    //we need to use the request_uri instead of pathinfo when mod_rewrite is on
+    if (isset($_SERVER['PATH_INFO'])) {
+        $uri = $_SERVER['PATH_INFO'];
+    } else if (isset($_SERVER['REQUEST_URI'])) {
+        $uri = str_replace(dirname($_SERVER['SCRIPT_NAME']),'',$_SERVER['REQUEST_URI']);
+    }
 
-    $args = @explode("/", substr($_SERVER['PATH_INFO'], 1));
+    $args = @explode("/", ltrim($uri,'/'));
     if (!$args) $args = array($cfg['default_ctrl']);
     $cfg['controller'] = 'ctrl_' . array_shift($args);
     $cfg['args'] = implode('/', $args);
 
+    //print $cfg['controller'];
+    //die();
+    
     //Defines the controller if it exists
     if (!function_exists($cfg['controller']))
         $cfg['controller'] = 'ctrl_' . $cfg['default_ctrl'];
@@ -629,6 +595,87 @@ function front_ctrl() {
     //Calls the controller function
     call_user_func_array($cfg['controller'], $args);
 }
+ //this is maybe a bit too much.. why not leave it to the user to edit the file
+//to change the username and password?
+function loadConfig() {
+    global $cfg;
+    /**
+     * These are core settings, merged with config.php
+     */
+    $cfg = array (
+        //default controller
+        'default_ctrl'    => "index",
 
+        //dir names
+        'admin_style_dir' => 'system/style/',
+        'lib_dir'         => "system/lib/",
+        'projects_dir'    => "projects/",
+        'style_dir'       => "style/",
+        'tpl_dir'         => "tpl/",
+        'js_dir'          => "js/",
+        'css_dir'         => "css/",
+        'theme'           => "default/"
+    );
+
+    if (file_exists('system/config/config.php')) {
+        include 'system/config/config.php';
+
+        //cleanup theme
+        $cfg['theme'] = rtrim($cfg['theme'],'/').'/';
+
+        /**
+         * Automatic Base URL
+         * @see: http://codeigniter.com/forums/viewthread/81424/
+         */
+        if (!isset($cfg['base_url'])) {
+            $cfg['base_url']  = "http://" . $_SERVER['HTTP_HOST'];
+            $cfg['base_url'] .= str_replace(basename($_SERVER['SCRIPT_NAME']), "", $_SERVER['SCRIPT_NAME']);
+        }
+        
+        /**
+         * Automatic Base dir
+         */
+        if (!isset($cfg['base_dir'])) {
+            $cfg['base_dir'] = realpath('.').'/';
+            $cfg['base_dir'] = str_replace("\\","/",rtrim($cfg['base_dir'], '/').'/');
+        }
+
+        if (!isset($cfg['base_index'])) {
+            //@todo test if function available? if not apache?
+            if (in_array("mod_rewrite", apache_get_modules())) {
+                $cfg['base_index'] = "";
+            } else {
+                $cfg['base_index'] = "index.php/";
+            }
+        }
+    } else {
+        //lets install
+        $cfg['in_admin'] = true;
+        if (isset($_POST['username']) && isset($_POST['password'])) {
+            //@todo do a proper validation
+            if (strlen($_POST['password'])>5) {
+                //write the config
+                $output['password'] = $_POST['password'];
+                $output['username'] = $_POST['username'];
+                $php = "<?php \n".output("empty_config.php", $output, true);
+                if (!file_put_contents("system/config/config.php", $php))
+                    die('Error writing the config! check auth.');
+            } else {
+                $output['error'] = "does not validate";
+            }
+            redirect("login");
+        }
+        //@see http://www.gfx-depot.com/forum/-php-server-php-self-validation-t-1636.html
+        //Get the name of the file
+        $phpself = basename(__FILE__);
+        //Get everything from start of PHP_SELF to where $phpself begins
+        //Cut that part out, and place $phpself after it
+        $_SERVER['PHP_SELF'] = substr($_SERVER['PHP_SELF'], 0,
+                strpos($_SERVER['PHP_SELF'], $phpself)) . $phpself;
+        $output['self'] = $_SERVER['PHP_SELF'];
+        output("install_form.html.php",$output);
+        die();
+    }
+}
 //Launches the front controlller if this file is not an include
 if (!defined('ALLOWINCLUDE')) front_ctrl();

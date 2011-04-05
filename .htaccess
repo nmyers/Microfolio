@@ -1,0 +1,6 @@
+RewriteEngine on
+# RewriteBase /microfolio/
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^(.+) - [PT,L]
+RewriteRule ^(.*)$ /microfolio/index.php?/$1 [L]
