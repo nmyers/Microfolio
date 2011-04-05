@@ -74,10 +74,12 @@ class qqFileUploader {
 
         if (isset($_GET['qqfile'])) {
             $this->file = new qqUploadedFileXhr();
+
         } elseif (isset($_FILES['qqfile'])) {
             $this->file = new qqUploadedFileForm();
         } else {
-            $this->file = false; 
+            $this->file = false;
+            die("{'error':'no get no file'}");
         }
     }
     
@@ -150,13 +152,3 @@ class qqFileUploader {
         
     }    
 }
-// list of valid extensions, ex. array("jpeg", "xml", "bmp")
-$allowedExtensions = array();
-// max file size in bytes
-$sizeLimit = 10 * 1024 * 1024;
-
-$uploader = new qqFileUploader($allowedExtensions, $sizeLimit);
-
-$result = $uploader->handleUpload('../../projects/'.$_GET['folder'].'/');
-// to pass data through iframe you will need to encode all html tags
-echo htmlspecialchars(json_encode($result), ENT_NOQUOTES);

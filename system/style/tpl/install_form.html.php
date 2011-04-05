@@ -6,10 +6,12 @@
     <title>Install microfolio</title>
 </head>
 <body>
-    <form name="logform" method=post action="<?=$self?>">
+    <?=$error?>
+    <form name="logform" method=post action="<?=htmlentities($_SERVER['SCRIPT_NAME'])?>">
         <h1>Create a new username and password</h1><br />
         <label>Username</label><input type="text" name="username" value="" /><br />
         <label>Password</label><input type="password" name="password" value="" /><br />
+        <label>Password (again)</label><input type="password" name="password2" value="" /><br />
         <br />
         <a href="#" onclick="document.logform.submit();" >save</a>
     </form>

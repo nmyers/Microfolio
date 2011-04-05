@@ -78,14 +78,11 @@ function addControls() {
 function createUploader() {
     var uploader = new qq.FileUploader({
         element: document.getElementById('file-uploader'),
-        action: base_url+'lib/ajaxupload/upload.php',
+        action: base_url+base_index+"admin_project_media_upload/"+project_name+"/",
         allowedExtensions: ['jpg'],
         onComplete: function(id, fileName, responseJSON){
             reloadGallery();
-           //$(".qq-upload-list").text("");
-        },
-        params: {
-            folder: project_name
+            $(".qq-upload-list").delay(1000).text("");
         }
     });
 }
@@ -95,9 +92,9 @@ function createUploader() {
  */
 function createSortable() {
     $( "#gallery" ).sortable({
-       update: function(event, ui) {
+       /*update: function(event, ui) {
             saveProject();
-        }
+        }*/
     });
 }
 

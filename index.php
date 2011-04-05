@@ -26,16 +26,14 @@ function ctrl_index() {
 }
 
 function ctrl_project($project_name) {
-    global $cfg;
-
-    $project_dir = $cfg['projects_dir'] . $project_name . '/';
+    $project_dir = cfg('projects_dir') . $project_name . '/';
     $project_file = $project_dir . 'project.html';
 
     if (!file_exists($project_file)) redirect ();
 
     //load html parser
     include_lib('simple_html_dom/simple_html_dom.php');
-    $menu_html    = file_get_html($cfg['projects_dir'].'projects.html');
+    $menu_html    = file_get_html(cfg('projects_dir').'projects.html');
 
     //remove unpublished project from the list
     foreach($menu_html->find('div[class*=prj-unpublished]') as $e) $e->parent()->outertext = '';
@@ -57,13 +55,13 @@ function ctrl_project($project_name) {
     $project_html = file_get_html($project_file);
 
     //rewrite images urls
-    foreach($project_html->find('div.image img') as $e) $e->src = $cfg['base_url'].$project_dir.$e->src;
+    foreach($project_html->find('div.image img') as $e) $e->src = cfg('base_url').$project_dir.$e->src;
 
     //Check for a project template
     $project_template = "project_default.html.php";
     if (isset($prj_settings['template'])) {
         $template_file = "project_".$prj_settings['template'].".html.php";
-        if (file_exists($cfg['style_dir'] . $cfg['theme'] . $cfg['tpl_dir'] . $template_file)) {
+        if (file_exists(cfg('style_dir') . cfg('theme') . cfg('tpl_dir') . $template_file)) {
             $project_template = $template_file;
         }
     }
@@ -130,14 +128,12 @@ function ctrl_logout() {
  * @global  $cfg
  */
 function ctrl_admin_projects_menu() {
-    global $cfg;
-
     // loads and parse 'projects.html'
     include_lib('simple_html_dom/simple_html_dom.php');
-    $html = file_get_html($cfg['projects_dir'].'projects.html');
+    $html = file_get_html(cfg('projects_dir').'projects.html');
 
     // gets an array of all the project folders
-    $projects_dir = getDirs($cfg['projects_dir']);
+    $projects_dir = getDirs(cfg('projects_dir'));
 
     /** Renoves all the project DIVs with no matching folders (deleted)
      */
@@ -161,7 +157,8 @@ function ctrl_admin_projects_menu() {
     }
 
     /**
-     * @todo adds the class sortable for the output (this could be done in js)
+     * adds the class sortable for the output
+     * @todo makes more sense in js
      */
     $html->find("#menu-projects",0)->class="sortable";
     $output['menu'] = $html->find("#menu-projects",0);
@@ -172,11 +169,8 @@ function ctrl_admin_projects_menu() {
 /**
  * Admin Controller - Projects menu save
  * Ajax call only. Saves the menu in 'projects.html'
- *
- * @global array $cfg
  */
 function ctrl_admin_projects_menu_save() {
-    global $cfg;
     checkAjax();
 
     include_lib('simple_html_dom/simple_html_dom.php');
@@ -185,13 +179,13 @@ function ctrl_admin_projects_menu_save() {
     /**
      * Cleans up the html: removes the controls and inline styles
      */
-    $menuhtml = str_get_html($_POST['menuhtml']);
+    $menuhtml = str_get_html(stripslashes($_POST['menuhtml']));
     foreach($menuhtml->find('.controls') as $e) $e->outertext = '';
     foreach($menuhtml->find('li[style]') as $e) $e->style = null;
 
     $output['menuhtml'] = clean_html_code($menuhtml->save());
     $html = output("empty_projects_menu.html.php", $output, true);
-    if(!file_put_contents($cfg['projects_dir']."projects.html", $html))
+    if(!file_put_contents(cfg('projects_dir')."projects.html", $html))
         die('Error writing "projects.html".');
     echo '1';
 }
@@ -203,9 +197,7 @@ function ctrl_admin_projects_menu_save() {
  * @param string $project_name
  */
 function ctrl_admin_project_edit($project_name) {
-    global $cfg;
-
-    $project_dir = $cfg['projects_dir'] . $project_name . '/';
+    $project_dir = cfg('projects_dir') . $project_name . '/';
     $project_file = $project_dir . 'project.html';
 
     //load html parser
@@ -230,7 +222,7 @@ function ctrl_admin_project_edit($project_name) {
     $gallery_dom = $html->find("#gallery",0);
     foreach ($new_imgs as $new_img) {
         $div = "<div class=\"media image\" >";
-        $div.= "   <img src=\"$new_img\" />";
+        $div.= "   <img src=\"$new_img\" alt=\"\" />";
         $div.= "   <div class=\"caption\" > </div>"; //spaces left in div on purpose!
         $div.= "</div>";
         $gallery_dom->innertext = $gallery_dom->innertext .$div;
@@ -238,7 +230,7 @@ function ctrl_admin_project_edit($project_name) {
 
     //prepare vars for template
     $gallery_html = $html->find("#gallery",0)->outertext;
-    $output['gallery'] = str_replace('src="', 'src="'.$cfg['base_url'].$project_dir, $gallery_html);
+    $output['gallery'] = str_replace('src="', 'src="'.cfg('base_url').$project_dir, $gallery_html);
     $output['title'] = $html->find("h1",0)->innertext;
     $output['text'] = $html->find("#presentation",0)->innertext;
     $output['project_name'] = $project_name;
@@ -254,10 +246,9 @@ function ctrl_admin_project_edit($project_name) {
  * @param string $project_name
  */
 function ctrl_admin_project_save($project_name) {
-    global $cfg;
     checkAjax();
 
-    $project_dir = $cfg['projects_dir'] . $project_name . '/';
+    $project_dir = cfg('projects_dir') . $project_name . '/';
     $project_file = $project_dir . 'project.html';
 
     include_lib('simple_html_dom/simple_html_dom.php');
@@ -266,78 +257,77 @@ function ctrl_admin_project_save($project_name) {
     $html = file_get_html($project_file);
 
     //cleans and adds the gallery
-    $gallery = str_get_html($_POST['gallery']);
+    $gallery = str_get_html(stripslashes($_POST['gallery']));
     foreach($gallery->find('.controls') as $e) $e->outertext = '';
+    foreach($gallery->find('div[style]') as $e) $e->style = NULL;
     foreach($gallery->find('img') as $img) {
         $img->src = substr($img->src, strrpos($img->src,"/")+1);
     }
-    $html->find("#gallery",0)->innertext = "\n\n".clean_html_code($gallery)."\n\n";
+    $html->find("#gallery",0)->innertext = "\n\n".clean_html_code($gallery->innertext)."\n\n";
 
     //process and adds the text
     //@todo use a strip tag to cleanup the code received
-    $html_text = clean_html_code($_POST['text']);
+    $html_text = clean_html_code(stripslashes($_POST['text']));
 
     $html->find("#presentation",0)->innertext = "\n\n".$html_text."\n\n";
 
     //adds the text
-    $html->find("#title",0)->innertext = $_POST["title"];
+    $html->find("#title",0)->innertext = stripslashes($_POST["title"]);
 
     if(!file_put_contents($project_file, $html->save()))
         die('Error writing "project.html".');
     echo '1';
 }
 
-/**
- *
- * @global $cfg $cfg
- * @param <type> $project_name
- */
 function ctrl_admin_project_delete($project_name) {
-    global $cfg;
     checkAjax();
-    $projects = getDirs($cfg['projects_dir']);
+    $projects = getDirs(cfg('projects_dir'));
     if (!in_array($project_name, $projects)) die("This project does not exist.");
-    foreach(getFiles($cfg['projects_dir'].$project_name) as $file)
-        if(!unlink($cfg['projects_dir'].$project_name.'/'.$file)) die("Could not delete the file: ".$project_name);;
-    if(!rmdir($cfg['projects_dir'].$project_name)) die("Could not delete the folder: ".$project_name);
+    foreach(getFiles(cfg('projects_dir').$project_name) as $file)
+        if(!unlink(cfg('projects_dir').$project_name.'/'.$file)) die("Could not delete the file: ".$project_name);;
+    if(!rmdir(cfg('projects_dir').$project_name)) die("Could not delete the folder: ".$project_name);
     echo '1';
 }
 
-/**
- *
- * @global $cfg $cfg
- * @param <type> $project_name
- */
 function ctrl_admin_project_create($project_name) {
-    global $cfg;
     checkAjax();
-    $projects = getDirs($cfg['projects_dir']);
+    $projects = getDirs(cfg('projects_dir'));
     if (in_array($project_name, $projects))
             die("This project already exists.");
-    if(!mkdir($cfg['projects_dir'].$project_name)) 
+    if(!mkdir(cfg('projects_dir').$project_name))
         die('Error creating the folder.');
     $output['project_name'] = $project_name;
     $html = output("empty_project.html.php", $output, true);
-    if(!file_put_contents($cfg['projects_dir'].$project_name."/project.html", $html))
+    if(!file_put_contents(cfg('projects_dir').$project_name."/project.html", $html))
         die('Error writing "project.html".');
     echo '1';
 }
 
-/**
- *
- * @global $cfg $cfg
- * @param <type> $project_name
- */
 function ctrl_admin_project_media_delete($project_name) {
-    global $cfg;
     checkAjax();
-    $file = $cfg['projects_dir'].$project_name.'/'.htmlentities($_POST['media_file']);
+    $file = cfg('projects_dir').$project_name.'/'.htmlentities($_POST['media_file']);
     if (file_exists($file)) {
         unlink($file);
         echo '1';
     } else {
         echo '0';
     }
+}
+
+function ctrl_admin_project_media_upload($project_name,$filename) {
+    include_lib('ajaxupload/upload.php');
+
+    //we need to clean the url and reinject the filename
+    //in a get to make the lib work.. dodgy
+    $filename = htmlentities(str_replace('?qqfile=', '', $filename));
+    $_GET['qqfile']=$filename;
+
+    $allowedExtensions = array('jpg','jpeg');
+    $sizeLimit = 10 * 1024 * 1024; //in bytes
+    $uploader = new qqFileUploader($allowedExtensions, $sizeLimit);
+    $result = $uploader->handleUpload(cfg('projects_dir').$project_name.'/');
+    // to pass data through iframe you will need to encode all html tags
+    echo htmlspecialchars(json_encode($result), ENT_NOQUOTES);
 }
 
 /*
@@ -388,8 +378,7 @@ function getDirs($dir) {
  * @param  string $filename
  */
 function include_lib($filename) {
-    global $cfg;
-    require_once $cfg['lib_dir'].$filename;
+    require_once cfg('lib_dir').$filename;
 }
 
 /**
@@ -397,6 +386,11 @@ function include_lib($filename) {
  */
 function checkAjax() {
     if (!isset($_POST['ajax'])) die("No direct call allowed.");
+}
+
+function cfg($key) {
+    global $cfg;
+    return isset($cfg[$key]) ? $cfg[$key] : NULL;
 }
 
 /*
@@ -417,12 +411,11 @@ function checkAjax() {
  * @return string
  */
 function output($tpl, $contentArray=array(), $returnToString=FALSE) {
-    global $cfg;
     
-    if($cfg['in_admin']) {
-        $tpl = $cfg['admin_style_dir'] . $cfg['tpl_dir'] . $tpl;
+    if(cfg('in_admin')) {
+        $tpl = cfg('admin_style_dir') . cfg('tpl_dir') . $tpl;
     } else {
-        $tpl = $cfg['style_dir'] . $cfg['theme'] . $cfg['tpl_dir'] . $tpl;
+        $tpl = cfg('style_dir') . cfg('theme') . cfg('tpl_dir') . $tpl;
     }
 
     //if (!file_exists($tpl)) redirect();
@@ -448,8 +441,7 @@ function output($tpl, $contentArray=array(), $returnToString=FALSE) {
  * @return string          The full URL
  */
 function makeUrl($action) {
-    global $cfg;
-    return $cfg['base_url'] . $cfg['base_index'] . $action;
+    return cfg('base_url') . cfg('base_index') . $action;
 }
 
 /**
@@ -462,41 +454,24 @@ function redirect($action="") {
     die();
 }
 
-/**
- *
- * @global $cfg $cfg
- * @param  string $filename
- * @return string
- */
 function includeJS($filename) {
-    global $cfg;
-    if($cfg['in_admin']) {
-        $script_filename = $cfg['admin_style_dir'].$cfg['js_dir'].$filename;
-    } else {
-        $script_filename = $cfg['style_dir'].$cfg['theme'].$cfg['js_dir'].$filename;
-    }
+    $js_filename = cfg('in_admin') ? cfg('admin_style_dir') : cfg('style_dir').cfg('theme');
+    $js_filename .= cfg('js_dir').$filename;
     
-    if (file_exists($script_filename)) {
-        $script_url = $cfg['base_url'].$script_filename;
-        return "<script type=\"text/javascript\" src=\"$script_url\"></script>";
+    if (file_exists($js_filename)) {
+        $js_url = cfg('base_url').$js_filename;
+        return "<script type=\"text/javascript\" src=\"$js_url\"></script>";
     }
-    return "";
 }
 
 function includeCSS($filename,$media="all") {
-    global $cfg;
-    
-    if($cfg['in_admin']) {
-        $css_filename = $cfg['admin_style_dir'].$cfg['css_dir'].$filename;
-    } else {
-        $css_filename = $cfg['style_dir'].$cfg['theme'].$cfg['css_dir'].$filename;
-    }
-    
+    $css_filename = cfg('in_admin') ? cfg('admin_style_dir') : cfg('style_dir').cfg('theme');
+    $css_filename .= cfg('css_dir').$filename;
+
     if (file_exists($css_filename)) {
-        $css_url = $cfg['base_url'].$css_filename;
+        $css_url = cfg('base_url').$css_filename;
         return "<link href=\"$css_url\" rel=\"stylesheet\" type=\"text/css\" media=\"$media\" />";
     }
-    return "";
 }
 
 /*
@@ -506,19 +481,16 @@ function includeCSS($filename,$media="all") {
  */
 
 /**
- * Crude login system
- * @todo this needs to change to something a bit more secure
+ * Basic login system
  *
- * @global array $cfg
  * @param  string $username
  * @param  string $password
  * @return boolean
  */
 function miniLog($username, $password) {
-    global $cfg;
-    if ($cfg['username'] == $username && $cfg['password'] == $password) {
-            $_SESSION['islogged'] = true;
-            return true;
+    if (cfg('username') == $username && md5($username . $password) == cfg('password')) {
+        $_SESSION['islogged'] = true;
+        return true;
     }
     return false;
 }
@@ -536,10 +508,7 @@ function logout() {
  * @return boolean TRUE if logged in
  */
 function is_logged() {
-    if (isset($_SESSION['islogged']))
-        return $_SESSION['islogged'];
-    else
-        return false;
+    return isset($_SESSION['islogged']) ? $_SESSION['islogged'] : false;
 }
 
 /*
@@ -595,8 +564,14 @@ function front_ctrl() {
     //Calls the controller function
     call_user_func_array($cfg['controller'], $args);
 }
+
+
+
  //this is maybe a bit too much.. why not leave it to the user to edit the file
 //to change the username and password?
+
+        //check if php version ok
+        //check if folder are writable
 function loadConfig() {
     global $cfg;
     /**
@@ -607,6 +582,7 @@ function loadConfig() {
         'default_ctrl'    => "index",
 
         //dir names
+        'admin_dir'       => 'system/',
         'admin_style_dir' => 'system/style/',
         'lib_dir'         => "system/lib/",
         'projects_dir'    => "projects/",
@@ -642,7 +618,7 @@ function loadConfig() {
 
         if (!isset($cfg['base_index'])) {
             //@todo test if function available? if not apache?
-            if (in_array("mod_rewrite", apache_get_modules())) {
+            if (in_array("mod_rewrite", apache_get_modules()) && file_exists('.htaccess')) {
                 $cfg['base_index'] = "";
             } else {
                 $cfg['base_index'] = "index.php/";
@@ -652,30 +628,30 @@ function loadConfig() {
         //lets install
         $cfg['in_admin'] = true;
         if (isset($_POST['username']) && isset($_POST['password'])) {
-            //@todo do a proper validation
-            if (strlen($_POST['password'])>5) {
-                //write the config
-                $output['password'] = $_POST['password'];
+            $error = array();
+            if (empty($_POST['username'])) $error[] = "Enter a username";
+            if (strlen($_POST['username'])<4 && !empty($_POST['username'])) $error[] = "Username too short (min 4 char)";
+            if (empty($_POST['password'])) $error[] = "Enter a password";
+            if (strlen($_POST['password'])<5 && !empty($_POST['password'])) $error[] = "Password too short (min 5 char)";
+            if ($_POST['password']!=$_POST['password2']) $error[] = "Passwords don't match";
+
+            if (empty($error)) {
+                $output['password'] = md5($_POST['username'].$_POST['password']);
                 $output['username'] = $_POST['username'];
                 $php = "<?php \n".output("empty_config.php", $output, true);
                 if (!file_put_contents("system/config/config.php", $php))
                     die('Error writing the config! check auth.');
-            } else {
-                $output['error'] = "does not validate";
+                output("install_welcome.html.php",$output);
+                die();
             }
-            redirect("login");
+            
         }
-        //@see http://www.gfx-depot.com/forum/-php-server-php-self-validation-t-1636.html
-        //Get the name of the file
-        $phpself = basename(__FILE__);
-        //Get everything from start of PHP_SELF to where $phpself begins
-        //Cut that part out, and place $phpself after it
-        $_SERVER['PHP_SELF'] = substr($_SERVER['PHP_SELF'], 0,
-                strpos($_SERVER['PHP_SELF'], $phpself)) . $phpself;
-        $output['self'] = $_SERVER['PHP_SELF'];
+
+        $output['error'] = empty($error) ? '' : '<ul><li>'.implode('</li><li>',$error).'</li></ul>';
         output("install_form.html.php",$output);
         die();
     }
 }
+
 //Launches the front controlller if this file is not an include
 if (!defined('ALLOWINCLUDE')) front_ctrl();

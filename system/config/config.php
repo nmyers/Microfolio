@@ -10,7 +10,7 @@ $cfg['theme']     = 'default';
 
 $cfg['username']  = 'admin';
 
-$cfg['password']  = '123';
+$cfg['password']  = 'e3274be5c857fb42ab72d786e281b4b8';
 
 //$cfg['default_ctrl']  = 'index';
 
