@@ -26,6 +26,7 @@ function ctrl_index() {
 }
 
 function ctrl_project($project_name) {
+
     $project_dir = cfg('projects_dir') . $project_name . '/';
     $project_file = $project_dir . 'project.html';
 
@@ -55,7 +56,7 @@ function ctrl_project($project_name) {
     $project_html = file_get_html($project_file);
 
     //rewrite images urls
-    foreach($project_html->find('div.image img') as $e) $e->src = cfg('base_url').$project_dir.$e->src;
+    //foreach($project_html->find('div.image img') as $e) $e->src = cfg('base_url').$project_dir.$e->src;
 
     //Check for a project template
     $project_template = "project_default.html.php";
@@ -65,14 +66,20 @@ function ctrl_project($project_name) {
             $project_template = $template_file;
         }
     }
-
-    $output['menu'] = $menu_html;
+    $output['project_name'] = $project_name;
+    $output['menu'] = $menu_html->find("#menu-projects",0)->outertext;
     $output['project'] = array (
         'title'        => $project_html->find("#title",0)->innertext,
         'presentation' => $project_html->find("#presentation",0),
         'gallery'      => $project_html->find("#gallery",0),
+        'name'         => $project_name,
+        'dir'          => $project_dir,
         'settings'     => $prj_settings
     );
+
+    if (file_exists(cfg('style_dir') . cfg('theme') . 'functions.php')) {
+            include cfg('style_dir') . cfg('theme') . 'functions.php';
+        }
 
     //show the project
     output($project_template,$output);
@@ -349,8 +356,6 @@ function ctrl_admin_project_media_upload($project_name,$filename) {
 
 /**
  * Returns an array of all the files matching the pattern
- * @todo This function forces the use of php 5.3 because of the 'use' keyword
- *       a while loop might be better
  *
  * @param  string   $dir
  * @param  string   $pattern  Regex pattern to filter the files
@@ -368,7 +373,6 @@ function getFiles($dir, $pattern='/.*/') {
 
 /**
  * Returns an array of all the directories within $dir, excluding . and ..
- * @todo This function forces the use of php 5.3! a while loop might be better
  *
  * @param  string   $dir
  * @return array
@@ -429,7 +433,7 @@ function output($tpl, $contentArray=array(), $returnToString=FALSE) {
         $tpl = cfg('style_dir') . cfg('theme') . cfg('tpl_dir') . $tpl;
     }
 
-    //if (!file_exists($tpl)) redirect();
+    if (!file_exists($tpl)) redirect();
 
     extract($contentArray, EXTR_OVERWRITE);
     $output = $contentArray;
