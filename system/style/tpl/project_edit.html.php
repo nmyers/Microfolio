@@ -1,10 +1,10 @@
 <?php output('_header.html.php',$output); ?>
 
     <?=includeCSS("uEditor.css");?>
-<?=includeCSS("fileuploader.css");?>
+    <?=includeCSS("fileuploader.css");?>
 
     <!-- custom javascript -->
-    <?=includeJS("jquery-ui-1.8.11.custom.min.js");?>
+    
     <?=includeJS("fileuploader.js");?>
 
     <?=includeJS("uEditor.js");?>

@@ -15,6 +15,29 @@
         var lib_dir    = '<?=cfg('lib_dir')?>';
         //var theme_dir  = '<?=cfg('style_dir').cfg('theme')?>';
     </script>
-    <?=includeJS("jquery-1.5.1.min.js")?>
+    <?=includeJS("jquery-1.5.2.min.js")?>
+    <?=includeJS("jquery-ui-1.8.11.custom.min.js");?>
+    <?=includeJS("jquery.layout.js")?>
+    
+    <script type="text/javascript">
+
+	var myLayout; // a var is required because this page utilizes: myLayout.allowOverflow() method
+
+	$(document).ready(function () {
+
+		myLayout = $('body').layout({
+			west__size:			500
+		,	west__spacing_closed:		20
+		,	west__togglerLength_closed:	100
+		,	west__togglerAlign_closed:	"top"
+		,	west__togglerContent_closed:"M<BR>E<BR>N<BR>U"
+		,	west__togglerTip_closed:	"Open & Pin Menu"
+		,	west__sliderTip:			"Slide Open Menu"
+		,	west__slideTrigger_open:	"mouseover"
+		});
+
+ 	});
+
+	</script>
 
           

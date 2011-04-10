@@ -125,6 +125,7 @@ function ctrl_logout() {
  */
 function ctrl_image() {
     include_lib('jit_image_manipulation/image.php');
+    die();
 }
 
 
@@ -223,11 +224,11 @@ function ctrl_admin_project_edit($project_name) {
     $dir_imgs = getFiles($project_dir, '/\.(jpg|jpeg)/i');
 
     $found_imgs = array();
-    foreach($html->find('#gallery img') as $img) {
-        if(!in_array($img->src, $dir_imgs)) {
+    foreach($html->find('#gallery a.image') as $img) {
+        if(!in_array($img->href, $dir_imgs)) {
             $img->parent()->outertext = ""; //not in dir? > remove div
         } else {
-            $found_imgs[] = $img->src;
+            $found_imgs[] = $img->href;
         }
     }
 
@@ -595,6 +596,7 @@ function loadConfig() {
         'cache_images'    => true,
         //default controller
         'default_ctrl'    => "index",
+        'image_quality'   => 90,
 
         //dir names
         'cache_dir'       => 'system/cache/',

@@ -124,7 +124,7 @@
 		}
 
 		private function __render($dest, $quality, $output, $interlacing=false){
-			
+			                                          
 			if(!is_resource($this->_resource)) throw new Exception(__('Invalid image resource supplied'));
 			
 			## Turn interlacing on for JPEG or PNG only
@@ -163,7 +163,7 @@
 		}
 		
 		public function display($quality=NULL, $interlacing=NULL, $output=NULL){
-					
+					                      
 			if(!$quality) $quality = self::DEFAULT_QUALITY;
 			if(!$interlacing) $interlacing = self::DEFAULT_INTERLACE;
 			if(!$output) $output = $this->Meta()->type; //DEFAULT_OUTPUT_TYPE;

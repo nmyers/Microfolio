@@ -3,7 +3,7 @@
 
 	//@ini_set('display_errors', 'off');
         global $cfg;
-      
+        
 	##Include some parts of the engine
 	require_once('class.image.php');
 
@@ -121,14 +121,14 @@
 		$etag = md5($last_modified . $image_path);
 	
 	    header(sprintf('ETag: "%s"', $etag));
-
+               
 	    if(isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) || isset($_SERVER['HTTP_IF_NONE_MATCH'])){
 	        if($_SERVER['HTTP_IF_MODIFIED_SINCE'] == $last_modified_gmt || str_replace('"', NULL, stripslashes($_SERVER['HTTP_IF_NONE_MATCH'])) == $etag){
 	            header('HTTP/1.1 304 Not Modified');
 	            exit();
 	        }
 	    }
-
+              
 	    header('Last-Modified: ' . $last_modified_gmt);
 	    header('Cache-Control: public');
 
@@ -146,12 +146,12 @@
 
              */
 		
-	}
-
+	}                                                                        
+   
 	## Do cache checking stuff here
 	if($param->external !== true && CACHING === true){
 
-	    $cache_file = sprintf('%s%s_%s', cfg('cache_dir'), md5(cfg('args') . $quality), basename($image_path));
+	    $cache_file = sprintf('%s%s_%s', cfg('cache_dir'), md5(cfg('args') . cfg('image_quality')), basename($image_path));
 
 		if(@is_file($cache_file) && (@filemtime($cache_file) < @filemtime($image_path))){ 
 			unlink($cache_file);
@@ -234,11 +234,11 @@
 			$image->applyFilter('crop', array($param->width, $param->height, $param->position, $param->background));
 			break;
 	}
-	
-	if(!$image->display(intval($settings['image']['quality']))) trigger_error(__('Error generating image'), E_USER_ERROR);
+	     //die('rendering');
+	if(!$image->display(intval(cfg('image_quality')))) trigger_error(__('Error generating image'), E_USER_ERROR);
 	
 	if(CACHING && !is_file($cache_file)){ 
-		$image->save($cache_file, intval($settings['image']['quality']));
+		$image->save($cache_file, intval(cfg('image_quality')));
 	}
 	
 	exit();

@@ -42,7 +42,7 @@ function showMessage(message) {
 function initWysiwyg() {
 
     $('#project_text').uEditor({
-            toolbarItems : ['bold','italic','link','formatblock','htmlsource'],
+            toolbarItems : ['bold','italic','link','htmlsource'],
             containerClass : 'uEditor'
     });
     
@@ -82,7 +82,8 @@ function addControls() {
      * Delete media
      */
     $( "#gallery .media a.delete" ).click(function(){
-        var src = $('img',$(this).parent().parent()).attr('src');
+        var src = $('a.image',$(this).parent().parent()).attr('href');
+        alert(src);
         var filename = src.substring(src.lastIndexOf('/')+1);
         deleteMedia(filename);
         return false;

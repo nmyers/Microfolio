@@ -1,42 +1,22 @@
-/**
- * Admin css
- * -> this needs to be redone from scratch!
- */
  #project_text {
-     width: 500px;
+     width: 100%;
      height: 300px;
-
 }
 
-#gallery { width:900px;}
+#gallery { width:100%;}
 	.media { margin: 3px 3px 3px 0; padding: 1px; float: left; width: 70px; height: 70px; text-align: center;background:#ccc; overflow:hidden; }
     .media img { width: 70px; }
 
 .media .controls {display:block;position:absolute;margin-top:70px;font-size:9px;}
 .media a { margin-right:2px;}
 .media .caption { display:none;}
-
-		body {
+body {
 			color: #333;
 			background-color: #fff;
 			font-size: 13px;
 			font-family: Arial, sans-serif;
-			padding: 2em 4em;
-			width: 860px;
-			margin: 0 auto;
 		}
 
-		pre, code {
-			font-size: 12px;
-		}
-
-		small {
-			font-size: 90%;
-		}
-
-		small code {
-			font-size: 11px;
-		}
 
 		.placeholder {
 			background-color: #cfcfcf;
@@ -146,4 +126,67 @@
                 opacity:.5;
 
                 }
+
+
+
+
+	.ui-layout-pane { /* all 'panes' */
+		border: 1px solid #BBB;
+	}
+	.ui-layout-pane-center { /* IFRAME pane */
+		padding: 0;
+		margin:  0;
+	}
+	.ui-layout-pane-west { /* west pane */
+		padding: 0 10px;
+		background-color: #FFF !important;
+		overflow: auto;
+	}
+
+	.ui-layout-resizer { /* all 'resizer-bars' */
+		background: #DDD;
+		}
+		.ui-layout-resizer-open:hover { /* mouse-over */
+			background: #9D9;
+		}
+
+	.ui-layout-toggler { /* all 'toggler-buttons' */
+		background: #AAA;
+		}
+		.ui-layout-toggler-closed { /* closed toggler-button */
+			background: #CCC;
+			border-bottom: 1px solid #BBB;
+		}
+		.ui-layout-toggler .content { /* toggler-text */
+			font: 14px bold Verdana, Verdana, Arial, Helvetica, sans-serif;
+		}
+		.ui-layout-toggler:hover { /* mouse-over */
+			background: #DCA;
+			}
+			.ui-layout-toggler:hover .content { /* mouse-over */
+				color: #009;
+				}
+
+	/* class to make the 'iframe mask' visible */
+	.ui-layout-mask {
+		opacity: 0.2 !important;
+		filter:	 alpha(opacity=20) !important;
+		background-color: #666 !important;
+	}
+
+
+	body {
+		background-color: black;
+		font-family: Geneva, Arial, Helvetica, sans-serif;
+	}
+
+	ul { /* basic menu styling */
+		margin:		1ex 0;
+		padding:	0;
+		list-style:	none;
+		position:	relative;
+	}
+	li {
+		padding: 0.15em 1em 0.3em 5px;
+	}
 
