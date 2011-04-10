@@ -46,6 +46,7 @@ $(function() {
  *
  */
 function sortable() {
+    $('#menu-projects').addClass('sortable');
     $('ol.sortable').nestedSortable({
         forcePlaceholderSize: true,
         handle: 'div',

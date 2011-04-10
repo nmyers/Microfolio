@@ -4,11 +4,8 @@
     <?=includeCSS("fileuploader.css");?>
 
     <!-- custom javascript -->
-    
     <?=includeJS("fileuploader.js");?>
-
     <?=includeJS("uEditor.js");?>
-
     <?=includeJS("admin_project_edit.js");?>
 
     <script type="text/javascript" >
@@ -23,8 +20,15 @@
 
     <a href="#" id="saveproject" >save page</a>
     <input type="text" id="project_title" value="<?=$title?>" >
+
+    <select id="template">
+    <?php foreach($templates as $template): ?>
+        <option value="<?=$template?>" <?php if($settings['template']==$template) echo 'selected' ?> ><?=$template?></option>
+    <?php endforeach; ?>
+    </select>
+
     <textarea id="project_text" name="project_text" ><?=$text?></textarea>
-    
+   
     <div id="file-uploader"></div>
     <a href="#" id="addembed" >add embed</a>
     

@@ -44,14 +44,7 @@ function ctrl_project($project_name) {
     if(!$prj=$menu_html->find("a[href^=$project_name/]",0)) redirect();
 
     //parse the project classes = project settings
-    $prj_classes = explode(" ",$prj->parent()->class);
-    $prj_settings = array();
-    foreach ($prj_classes as $class) {
-        if (stripos($class,'-')!==false) {
-            list($key,$val) = explode('-',$class);
-            $prj_settings[$key]=$val;
-        }
-    }
+    $prj_settings = getSettings($prj->parent()->class);
 
     $project_html = file_get_html($project_file);
 
@@ -102,8 +95,7 @@ function ctrl_login() {
  * @global array $cfg
  */
 function ctrl_dologin() {
-    if (miniLog($_POST['username'], $_POST['password'])) {
-        //@todo: change to var in config
+    if (miniLog(getPost('username'), getPost('password'))) {
         redirect("admin_projects_menu");
     } else {
         redirect("login");
@@ -145,15 +137,12 @@ function ctrl_image() {
  * @global  $cfg
  */
 function ctrl_admin_projects_menu() {
-    // loads and parse 'projects.html'
+    
     include_lib('simple_html_dom/simple_html_dom.php');
     $html = file_get_html(cfg('projects_dir').'projects.html');
-
-    // gets an array of all the project folders
     $projects_dir = getDirs(cfg('projects_dir'));
 
-    /** Renoves all the project DIVs with no matching folders (deleted)
-     */
+    //Removes project DIVs with no matching folder
     $projects_found = array();
     foreach($html->find('#menu-projects .project a') as $project_link) {
         $project_name = str_replace("/project.html","",$project_link->href);
@@ -164,8 +153,7 @@ function ctrl_admin_projects_menu() {
         }
     }
 
-    /** Adds new DIVs for new project folders
-     */
+    // Adds new DIVs for new project folders
     $projects_new = array_diff($projects_dir,$projects_found);
     $menu_dom = $html->find("#menu-projects",0);
     foreach ($projects_new as $project_new) {
@@ -173,13 +161,7 @@ function ctrl_admin_projects_menu() {
         $menu_dom->innertext = $menu_dom->innertext .$new_project_link;
     }
 
-    /**
-     * adds the class sortable for the output
-     * @todo makes more sense in js
-     */
-    $html->find("#menu-projects",0)->class="sortable";
-    $output['menu'] = $html->find("#menu-projects",0);
-    
+    $output['menu'] = $html->find("#menu-projects",0);    
     output("projects_menu.html.php", $output);
 }
 
@@ -193,10 +175,8 @@ function ctrl_admin_projects_menu_save() {
     include_lib('simple_html_dom/simple_html_dom.php');
     include_lib('htmlindent/htmlindent.php');
 
-    /**
-     * Cleans up the html: removes the controls and inline styles
-     */
-    $menuhtml = str_get_html(stripslashes($_POST['menuhtml']));
+    // Cleans up the html: removes controls and inline styles
+    $menuhtml = str_get_html(getPost('menuhtml',false));
     foreach($menuhtml->find('.controls') as $e) $e->outertext = '';
     foreach($menuhtml->find('li[style]') as $e) $e->style = null;
 
@@ -232,10 +212,8 @@ function ctrl_admin_project_edit($project_name) {
         }
     }
 
-    //new images
+    //add links for new images
     $new_imgs = array_diff($dir_imgs, $found_imgs);
-
-    //add links for new project folders
     $gallery_dom = $html->find("#gallery",0);
     foreach ($new_imgs as $new_img) {
         $div = "<div class=\"media image\" >";
@@ -247,6 +225,14 @@ function ctrl_admin_project_edit($project_name) {
         $gallery_dom->innertext = $gallery_dom->innertext .$div;
     }
 
+    //get available frontend templates for current theme
+    $templates =  getFiles(cfg('style_dir').cfg('theme').cfg('tpl_dir'), '/project_\w+\.html.php/i');
+    foreach ($templates as &$template) $template = str_replace('project_','',str_replace('.html.php','',$template));
+    $output['templates'] = $templates;
+
+    //get the settings
+    $output['settings'] = getSettings($html->find("#project",0)->class);
+    
     //prepare vars for template
     $gallery_html = $html->find("#gallery",0)->outertext;
     $output['gallery'] = str_replace('src="', 'src="'.cfg('base_url').'image/2/72/72/5/'.$project_name.'/', $gallery_html);
@@ -276,7 +262,7 @@ function ctrl_admin_project_save($project_name) {
     $html = file_get_html($project_file);
 
     //cleans and adds the gallery
-    $gallery = str_get_html(stripslashes($_POST['gallery']));
+    $gallery = str_get_html(getPost('gallery',false));
     foreach($gallery->find('.controls') as $e) $e->outertext = '';
     foreach($gallery->find('div[style]') as $e) $e->style = NULL;
     foreach($gallery->find('img') as $img) {
@@ -286,12 +272,15 @@ function ctrl_admin_project_save($project_name) {
 
     //process and adds the text
     //@todo use a strip tag to cleanup the code received
-    $html_text = clean_html_code(stripslashes($_POST['text']));
+    $html_text = clean_html_code(strip_tags(getPost('text',true),cfg('allowed_tags')));
 
     $html->find("#presentation",0)->innertext = "\n\n".$html_text."\n\n";
 
     //adds the text
-    $html->find("#title",0)->innertext = stripslashes($_POST["title"]);
+    $html->find("#title",0)->innertext = getPost("title");
+
+    //adds the template class
+    $html->find("#project",0)->class = 'template-'.getPost("template");
 
     if(!file_put_contents($project_file, $html->save()))
         die('Error writing "project.html".');
@@ -407,6 +396,30 @@ function checkAjax() {
 function cfg($key) {
     global $cfg;
     return isset($cfg[$key]) ? $cfg[$key] : NULL;
+}
+
+/**
+ * Sanitize post values
+ * @param <type> $key
+ */
+function getPost($key,$sanitize=true) {
+    if (!isset($_POST[$key])) return null;
+    $val = stripslashes($_POST[$key]);
+    if ($sanitize)  $val = filter_var($val, FILTER_SANITIZE_STRING);
+    return $val;
+}
+
+function getSettings($class) {
+    $prj_classes = explode(" ",$class);
+    if (empty($prj_classes)) return array();
+    $prj_settings = array();
+    foreach ($prj_classes as $class) {
+        if (stripos($class,'-')!==false) {
+            list($key,$val) = explode('-',$class);
+            $prj_settings[$key]=$val;
+        }
+    }
+    return $prj_settings;
 }
 
 /*
@@ -597,6 +610,7 @@ function loadConfig() {
         //default controller
         'default_ctrl'    => "index",
         'image_quality'   => 90,
+        'allowed_tags'    => '<p><h1><h2><h3><em><strong><a><br>',
 
         //dir names
         'cache_dir'       => 'system/cache/',

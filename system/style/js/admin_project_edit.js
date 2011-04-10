@@ -142,7 +142,8 @@ function saveProject() {
         ajax: true,
         title: $("#project_title").attr("value"),
         text:  $("#project_text").val(),
-        gallery: $("#gallery").html()
+        gallery: $("#gallery").html(),
+        template: $("#template").val()
     },function(data) {
         if (data=='1') {
             showMessage("saved");
