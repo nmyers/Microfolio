@@ -128,11 +128,10 @@ function addControls() {
      *  rename / edit / delete / publish / hide
      */
     $("#menu-projects .controls").remove();
-    controls  = "<a href='#' class='bt-rename' >rename</a>";
-    controls += "<a href='#' class='bt-edit' >edit</a>";
-    controls += "<a href='#' class='bt-delete' >delete</a>";
-    controls += "<a href='#' class='bt-publish' ><span>un</span>publish</a>";
-    controls += "<a href='#' class='bt-hide' ><span>un</span>hide</a>";
+    controls  = "<a href='#' class='button2 bt-rename' >rename</a>";
+    controls += "<a href='#' class='button2 bt-edit' >edit</a>";
+    controls += "<a href='#' class='button2 bt-delete' >delete</a>";
+    controls += "<a href='#' class='button bt-status' >offline</a>";
     $("#menu-projects div").append("<div class='controls' >"+controls+"</div>");
 
     // Removes publish and edit if it's a section
@@ -187,26 +186,34 @@ function addControls() {
         return false;
     })
 
-    /**
-     * Publish or unpublish a project by toggling a class
-     */
-    $(".controls .bt-publish").click(function(){
-        $(this).parent().parent().toggleClass("prj-unpublished");
-        return false;
+    $(".controls .bt-status").each(function(){
+        parentDiv = $(this).parent().parent();
+        if (parentDiv.hasClass('status-hidden')) $(this).addClass('status-hidden').text('hidden');
+        if (parentDiv.hasClass('status-offline')) $(this).addClass('status-offline').text('offline');
+        if (parentDiv.hasClass('status-online')) $(this).addClass('status-online').text('online');
     })
 
     /**
      * Hide/unhide a project or a section by toggling a class
      * @todo might be better to remove the option of hiding a section?
      */
-    $(".controls .bt-hide").click(function(){
+    $(".controls .bt-status").click(function(){
         parentDiv = $(this).parent().parent();
-        parentDiv.toggleClass("prj-hide");
-        if (parentDiv.hasClass("prj-hide")) {
-            $(".section, .project",parentDiv.parent()).addClass("prj-hide");
-        } else {
-            $(".section, .project",parentDiv.parent()).removeClass("prj-hide");
+        if (parentDiv.hasClass('status-offline')) {
+            oldClass = 'status-offline';
+            newClass = 'status-online';
+            newText  = 'online';
+        } else if(parentDiv.hasClass('status-online')) {
+            oldClass = 'status-online';
+            newClass = 'status-hidden';
+            newText  = 'hidden';
+        } else if(parentDiv.hasClass('status-hidden')) {
+            oldClass = 'status-hidden';
+            newClass = 'status-offline';
+            newText  = 'offline';
         }
+        parentDiv.removeClass(oldClass).addClass(newClass);
+        $(this).removeClass(oldClass).addClass(newClass).text(newText);
         return false;
     })
 }

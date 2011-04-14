@@ -12,13 +12,10 @@
         var project_name = '<?=$project_name?>';
     </script>
 
-    <!-- custom css -->
-    <?=includeCSS("fileuploadera.css");?>
-
 <?output('_menu.html.php',$output);?>
-<h1>Project</h1>
-
-    <a href="#" id="saveproject" >save page</a>
+    <div class="top-fixed" >
+    <div class="pad" >
+    
     <input type="text" id="project_title" value="<?=$title?>" >
 
     <select id="template">
@@ -27,14 +24,30 @@
     <?php endforeach; ?>
     </select>
 
+    <div class="buttons" >
+    <a href="#" class="button status-<?= $prj_settings['status']; ?>" id="status" ><?= $prj_settings['status']; ?></a>
+    <a href="#" class="button" id="saveproject" >save</a>
+    </div>
+    
+    </div>
+    </div>
+
+    <div class="pad" >
+
     <textarea id="project_text" name="project_text" ><?=$text?></textarea>
    
-    <div id="file-uploader"></div>
-    <a href="#" id="addembed" >add embed</a>
+    
     
     <div id="gallery_container" >
+        
+        <ul class="toolbar" >
+            <li id="file-uploader" ></li>
+            <li><a href="#" id="addembed" >add embed</a></li>
+        </ul>
+
+
     <?php print $gallery ?>
-    </div>
+    
 
     <div id="edit_media_dialog" >
         <div id="edit_image_form" >
@@ -67,6 +80,9 @@
         </div>
     </div>
 
+    </div>
+
+    </div>
 
 
 <?php output('_footer.html.php',$output); ?>

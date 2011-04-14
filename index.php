@@ -9,6 +9,14 @@
  *
  * @author		Nicolas Myers
  * @version             0.1
+ *
+ * @todo
+ * - add styles for basic galleries
+ * - add admin style
+ * - add toggle between offline/publish/hide
+ * - ajax save menu settings for publish settings
+ * - add page for general settings (password etc.)
+ *
  */
 
 /*
@@ -34,7 +42,7 @@ function ctrl_project($project_name) {
 
     //load html parser
     include_lib('simple_html_dom/simple_html_dom.php');
-    $menu_html    = file_get_html(cfg('projects_dir').'projects.html');
+    $menu_html = file_get_html(cfg('projects_dir').'projects.html');
 
     //remove unpublished project from the list
     foreach($menu_html->find('div[class*=prj-unpublished]') as $e) $e->parent()->outertext = '';
@@ -85,7 +93,8 @@ function ctrl_project($project_name) {
 function ctrl_login() {
     global $cfg;
     $cfg['in_admin'] = true;
-    output("login.html.php");
+    $output['admin_title']='login';
+    output("login.html.php",$output);
 }
 
 /**
@@ -157,11 +166,11 @@ function ctrl_admin_projects_menu() {
     $projects_new = array_diff($projects_dir,$projects_found);
     $menu_dom = $html->find("#menu-projects",0);
     foreach ($projects_new as $project_new) {
-        $new_project_link = "<li><div class=\"project\" ><a href=\"$project_new/project.html\" >$project_new</a></div></li>";
+        $new_project_link = "<li><div class=\"project status-offline\" ><a href=\"$project_new/project.html\" >$project_new</a></div></li>";
         $menu_dom->innertext = $menu_dom->innertext .$new_project_link;
     }
-
-    $output['menu'] = $html->find("#menu-projects",0);    
+    $output['menu'] = $html->find("#menu-projects",0);
+    $output['admin_title']='Projects list';
     output("projects_menu.html.php", $output);
 }
 
@@ -232,6 +241,10 @@ function ctrl_admin_project_edit($project_name) {
 
     //get the settings
     $output['settings'] = getSettings($html->find("#project",0)->class);
+
+    $menu_html = file_get_html(cfg('projects_dir').'projects.html');
+    $prj=$menu_html->find("a[href^=$project_name/]",0);
+    $output['prj_settings'] = getSettings($prj->parent()->class);
     
     //prepare vars for template
     $gallery_html = $html->find("#gallery",0)->outertext;
@@ -239,6 +252,9 @@ function ctrl_admin_project_edit($project_name) {
     $output['title'] = $html->find("h1",0)->innertext;
     $output['text'] = $html->find("#presentation",0)->innertext;
     $output['project_name'] = $project_name;
+
+
+    $output['admin_title']='&larr; Projects list';
 
     output("project_edit.html.php", $output);
 }

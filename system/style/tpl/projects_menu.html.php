@@ -6,9 +6,12 @@
     <?=includeJS("admin_projects_menu.js");?>
     
 <?output('_menu.html.php',$output);?>
-<h2>Page Manager</h2>
-<a href="#" id="newproject" >new project</a>
-<a href="#" id="addsection" >add section</a>
-<a href="#" id="savechanges" >save changes</a>
-<?=$menu?>
+    <div class="pad" >
+        <a href="#" id="newproject"  class="button">new project</a>
+        <a href="#" id="addsection"  class="button">add section</a>
+        <a href="#" id="savechanges" class="button">save changes</a>
+        <div id="menu-holder" >
+            <?=$menu?>
+        </div>
+    </div>
 <?output('_footer.html.php',$output);?>

@@ -32,9 +32,9 @@ $(function() {
     })
 })
 
-function showMessage(message) {
+function showMessage(message,style) {
     $('#message').remove();
-    $('body').prepend('<div id="message" >'+message+'</div>');
+    $('.ui-layout-west').prepend('<div id="message" class="'+style+'" ><div class="in" >'+message+'</div></div>');
     $('#message').show().delay(1000).fadeOut(500,function(){$('#message').remove();});
 }
 

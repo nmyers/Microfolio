@@ -1,31 +1,78 @@
-.qq-uploader { position:relative; width: 100%;}
-
-.qq-upload-button {
-    display:block; /* or inline-block */
-    width: 105px; padding: 7px 0; text-align:center;    
-    background:#880000; border-bottom:1px solid #ddd;color:#fff;
+.qq-uploader
+{
+	/*[disabled]position:relative;*/
+	/*[disabled]width:100%;*/
 }
-.qq-upload-button-hover {background:#cc0000;}
-.qq-upload-button-focus {outline:1px dotted black;}
-
-.qq-upload-drop-area {
-    position:absolute; top:0; left:0; width:100%; height:100%; min-height: 70px; z-index:2;
-    background:#FF9797; text-align:center; 
+.qq-upload-button-hover
+{
+	/*[disabled]background:#CC0000;*/
 }
-.qq-upload-drop-area span {
-    display:block; position:absolute; top: 50%; width:100%; margin-top:-8px; font-size:16px;
+.qq-upload-button-focus
+{
+	/*[disabled]outline:1px dotted #000000;*/
 }
-.qq-upload-drop-area-active {background:#FF7171;}
-
-.qq-upload-list {margin:15px 35px; padding:0; list-style:disc;}
-.qq-upload-list li { margin:0; padding:0; line-height:15px; font-size:12px;}
-.qq-upload-file, .qq-upload-spinner, .qq-upload-size, .qq-upload-cancel, .qq-upload-failed-text {
-    margin-right: 7px;
+.qq-upload-drop-area
+{
+	/*[disabled]position:absolute;*/
+	/*[disabled]top:0;*/
+	/*[disabled]left:0;*/
+	/*[disabled]width:100%;*/
+	/*[disabled]height:100%;*/
+	/*[disabled]min-height:70px;*/
+	/*[disabled]z-index:2;*/
+	/*[disabled]background:#FF9797;*/
+	/*[disabled]text-align:center;*/
 }
-
-.qq-upload-file {}
-.qq-upload-spinner {display:inline-block; background: url("loading.gif"); width:15px; height:15px; vertical-align:text-bottom;}
-.qq-upload-size,.qq-upload-cancel {font-size:11px;}
-
-.qq-upload-failed-text {display:none;}
-.qq-upload-fail .qq-upload-failed-text {display:inline;}
+.qq-upload-drop-area SPAN
+{
+	/*[disabled]display:block;*/
+	/*[disabled]position:absolute;*/
+	/*[disabled]top:50%;*/
+	/*[disabled]width:100%;*/
+	/*[disabled]margin-top:-8px;*/
+	/*[disabled]font-size:16px;*/
+}
+.qq-upload-drop-area-active
+{
+	/*[disabled]background:#FF7171;*/
+}
+.qq-upload-list
+{
+	/*[disabled]margin:15px 35px;*/
+	/*[disabled]padding:0;*/
+	/*[disabled]list-style:disc;*/
+}
+.qq-upload-list LI
+{
+	/*[disabled]margin:0;*/
+	/*[disabled]padding:0;*/
+	/*[disabled]line-height:15px;*/
+	/*[disabled]font-size:12px;*/
+}
+.qq-upload-file, .qq-upload-spinner, .qq-upload-size, .qq-upload-cancel, .qq-upload-failed-text
+{
+	/*[disabled]margin-right:7px;*/
+}
+.qq-upload-file
+{
+}
+.qq-upload-spinner
+{
+	/*[disabled]display:inline-block;*/
+	/*[disabled]background:url("loading.gif");*/
+	/*[disabled]width:15px;*/
+	/*[disabled]height:15px;*/
+	/*[disabled]vertical-align:text-bottom;*/
+}
+.qq-upload-size, .qq-upload-cancel
+{
+	/*[disabled]font-size:11px;*/
+}
+.qq-upload-failed-text
+{
+	/*[disabled]display:none;*/
+}
+.qq-upload-fail .qq-upload-failed-text
+{
+	/*[disabled]display:inline;*/
+}
