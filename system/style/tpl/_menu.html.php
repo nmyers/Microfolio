@@ -1,19 +1,18 @@
 
-
     <title>Microfolio :: <?=$admin_title?></title>
 </head>
 
 
 <iframe id="mainFrame" name="mainFrame" class="ui-layout-center"
 	width="800" height="600" frameborder="0" scrolling="auto"
-	src="<?= makeUrl("project/test")?>"></iframe>
+	src="<?= makeUrl("")?>"></iframe>
 
 <div class="ui-layout-west">
 <div id="design" >&nbsp;</div>
 <div id="header" >
     <div class="in" >
         <div class="left" >
-            <a href="<?=makeUrl('admin_projects_menu');?>" ><?=$admin_title?></a>
+            <a href="<?=makeUrl('admin_projects_list');?>" ><?=$admin_title?></a>
         </div>
         <div class="right" >
             <ul id="menu">

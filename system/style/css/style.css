@@ -182,6 +182,18 @@ A.button.status-hidden
 {
 	padding: 6px 8px;
 }
+#message.style-0
+{
+	background: #ED1C34;
+}
+#message.style-1
+{
+	background: #00C45B;
+}
+#message.style-2
+{
+	background: #0EB0C0;
+}
 /*HEADER*/
 #header
 {
@@ -389,6 +401,39 @@ INPUT#project_title
 .toolbar LI A:hover, .qq-upload-button-hover
 {
 	background: #999;
+}
+#edit_image_form .preview IMG
+{
+	width: 200px;
+}
+#edit_image_form .preview
+{
+	/*+placement:float-left 0px 0px;*/
+	float: left;
+	position: relative;
+	left: 0px;
+	top: 0px;
+	height: 200px;
+	width: 200px;
+	overflow: hidden;
+	margin: 6px;
+	background-color: #F0F0F0;
+}
+#edit_media_dialog INPUT
+{
+	height: 20px;
+	width: 150px;
+	margin-bottom: 6px;
+	font-size: 120%;
+	padding: 0 2px;
+}
+#edit_media_dialog TEXTAREA
+{
+	height: 82px;
+	width: 150px;
+	margin-bottom: 6px;
+	font-size: 120%;
+	padding: 0 2px;
 }
 /*OLD STUFF*/
 #project_text

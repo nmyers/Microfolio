@@ -32,17 +32,10 @@ $(function() {
     })
 })
 
-function showMessage(message,style) {
-    $('#message').remove();
-    $('.ui-layout-west').prepend('<div id="message" class="'+style+'" ><div class="in" >'+message+'</div></div>');
-    $('#message').show().delay(1000).fadeOut(500,function(){$('#message').remove();});
-}
-
-
 function initWysiwyg() {
 
     $('#project_text').uEditor({
-            toolbarItems : ['bold','italic','link','htmlsource'],
+            toolbarItems : ['bold','italic','link','h1','h2','h3','p','htmlsource'],
             containerClass : 'uEditor'
     });
     
@@ -155,7 +148,7 @@ function saveProject() {
 
 function editMedia(media_div) {
     //hide the gallery and show the dialog
-    $("#gallery_container").hide();
+    $("#gallery_content").hide();
     $("#edit_media_dialog").show();
 
     //unbind click events
@@ -170,7 +163,7 @@ function editMedia(media_div) {
         $("#edit_embed_form").hide();
 
         //populate the form
-        $("#edit_image_form img").attr("src",$("img",media_div).attr("src"));
+        $("#edit_image_form img").attr("src",$("img",media_div).attr("src").replace("/2/72/72/5/","/0/"));
         $("#image_title").val($("a",media_div).attr("title"));
         $("#image_caption").val($(".caption",media_div).text());
 
@@ -179,7 +172,7 @@ function editMedia(media_div) {
             $("img",media_div).attr("alt",$("#image_title").val());
             $("a",media_div).attr("title",$("#image_title").val());
             $(".caption",media_div).text($("#image_caption").val());
-            $("#gallery_container").show();
+            $("#gallery_content").show();
             $("#edit_media_dialog").hide();
             saveProject();
         })
@@ -201,7 +194,7 @@ function editMedia(media_div) {
             $("a.embed",media_div).attr("title",$("#embed_title").val());
             $(".caption",media_div).text($("#embed_caption").val());
 
-            $("#gallery_container").show();
+            $("#gallery_content").show();
             $("#edit_media_dialog").hide();
             saveProject();
         })
@@ -209,7 +202,7 @@ function editMedia(media_div) {
 
     //cancel button
     $("#edit_media_controls .cancel").click(function(){
-        $("#gallery_container").show();
+        $("#gallery_content").show();
         $("#edit_media_dialog").hide();
     })
 }

@@ -30,9 +30,14 @@
  * Default controller
  */
 function ctrl_index() {
-    echo "Hello micro";
+    redirect('project/test');
 }
 
+/**
+ * Displays a project
+ *
+ * @param string $project_name
+ */
 function ctrl_project($project_name) {
 
     $project_dir = cfg('projects_dir') . $project_name . '/';
@@ -45,10 +50,14 @@ function ctrl_project($project_name) {
     $menu_html = file_get_html(cfg('projects_dir').'projects.html');
 
     //remove unpublished project from the list
-    foreach($menu_html->find('div[class*=prj-unpublished]') as $e) $e->parent()->outertext = '';
-    $menu_html = str_get_html($menu_html->save());
+    if(!is_logged ()) {
+        foreach($menu_html->find('div[class*=status-offline], div[class*=status-hidden]') as $e)
+                $e->parent()->outertext = '';
+        $menu_html = str_get_html($menu_html->save());
+    }
 
     //redirect if the project is not found (= not published)
+
     if(!$prj=$menu_html->find("a[href^=$project_name/]",0)) redirect();
 
     //parse the project classes = project settings
@@ -56,8 +65,6 @@ function ctrl_project($project_name) {
 
     $project_html = file_get_html($project_file);
 
-    //rewrite images urls
-    //foreach($project_html->find('div.image img') as $e) $e->src = cfg('base_url').$project_dir.$e->src;
 
     //Check for a project template
     $project_template = "project_default.html.php";
@@ -78,9 +85,8 @@ function ctrl_project($project_name) {
         'settings'     => $prj_settings
     );
 
-    if (file_exists(cfg('style_dir') . cfg('theme') . 'functions.php')) {
-            include cfg('style_dir') . cfg('theme') . 'functions.php';
-        }
+    $tpl = cfg('style_dir') . cfg('theme') . 'functions.php';
+    if (file_exists($tpl)) include $tpl;
 
     //show the project
     output($project_template,$output);
@@ -145,7 +151,7 @@ function ctrl_image() {
  *
  * @global  $cfg
  */
-function ctrl_admin_projects_menu() {
+function ctrl_admin_projects_list() {
     
     include_lib('simple_html_dom/simple_html_dom.php');
     $html = file_get_html(cfg('projects_dir').'projects.html');
@@ -153,7 +159,7 @@ function ctrl_admin_projects_menu() {
 
     //Removes project DIVs with no matching folder
     $projects_found = array();
-    foreach($html->find('#menu-projects .project a') as $project_link) {
+    foreach($html->find('#list-projects .project a') as $project_link) {
         $project_name = str_replace("/project.html","",$project_link->href);
         if(!in_array($project_name, $projects_dir)) {
             $project_link->parent()->parent()->outertext = "";
@@ -164,36 +170,36 @@ function ctrl_admin_projects_menu() {
 
     // Adds new DIVs for new project folders
     $projects_new = array_diff($projects_dir,$projects_found);
-    $menu_dom = $html->find("#menu-projects",0);
+    $list_dom = $html->find("#list-projects",0);
     foreach ($projects_new as $project_new) {
         $new_project_link = "<li><div class=\"project status-offline\" ><a href=\"$project_new/project.html\" >$project_new</a></div></li>";
-        $menu_dom->innertext = $menu_dom->innertext .$new_project_link;
+        $list_dom->innertext = $list_dom->innertext .$new_project_link;
     }
-    $output['menu'] = $html->find("#menu-projects",0);
+    $output['list'] = $html->find("#list-projects",0);
     $output['admin_title']='Projects list';
-    output("projects_menu.html.php", $output);
+    output("projects_list.html.php", $output);
 }
 
 /**
- * Admin Controller - Projects menu save
- * Ajax call only. Saves the menu in 'projects.html'
+ * Admin Controller - Projects list save
+ * Ajax call only. Saves the list in 'projects.html'
  */
-function ctrl_admin_projects_menu_save() {
+function ctrl_admin_projects_list_save() {
     checkAjax();
 
     include_lib('simple_html_dom/simple_html_dom.php');
     include_lib('htmlindent/htmlindent.php');
 
     // Cleans up the html: removes controls and inline styles
-    $menuhtml = str_get_html(getPost('menuhtml',false));
-    foreach($menuhtml->find('.controls') as $e) $e->outertext = '';
-    foreach($menuhtml->find('li[style]') as $e) $e->style = null;
+    $list_dom = str_get_html(getPost('listhtml',false));
+    foreach($list_dom->find('.controls') as $e) $e->outertext = '';
+    foreach($list_dom->find('li[style]') as $e) $e->style = null;
 
-    $output['menuhtml'] = clean_html_code($menuhtml->save());
-    $html = output("empty_projects_menu.html.php", $output, true);
+    $output['list_html'] = clean_html_code($list_dom->save());
+    $html = output("empty_projects_list.html.php", $output, true);
     if(!file_put_contents(cfg('projects_dir')."projects.html", $html))
-        die('Error writing "projects.html".');
-    echo '1';
+        die('0#Error writing "projects.html".');
+    echo '1#List Saved';
 }
 
 /**
@@ -203,14 +209,10 @@ function ctrl_admin_projects_menu_save() {
  * @param string $project_name
  */
 function ctrl_admin_project_edit($project_name) {
-    $project_dir = cfg('projects_dir') . $project_name . '/';
-    $project_file = $project_dir . 'project.html';
-
-    //load html parser
     include_lib('simple_html_dom/simple_html_dom.php');
 
-    $html = file_get_html($project_file);
-    $dir_imgs = getFiles($project_dir, '/\.(jpg|jpeg)/i');
+    $html = file_get_html(cfg('projects_dir').$project_name.'/project.html');
+    $dir_imgs = getFiles(cfg('projects_dir').$project_name.'/', '/\.(jpg|jpeg)/i');
 
     $found_imgs = array();
     foreach($html->find('#gallery a.image') as $img) {
@@ -229,31 +231,34 @@ function ctrl_admin_project_edit($project_name) {
         $div.= "   <a href=\"$new_img\" title=\"$new_img\" class=\"image\" >";
         $div.= "     <img src=\"$new_img\" alt=\"$new_img\" />";
         $div.= "   </a>";
-        $div.= "   <div class=\"caption\" > </div>"; //spaces left in div on purpose!
+        $div.= "   <div class=\"caption\" > </div>"; //space left on purpose!
         $div.= "</div>";
         $gallery_dom->innertext = $gallery_dom->innertext .$div;
     }
 
     //get available frontend templates for current theme
-    $templates =  getFiles(cfg('style_dir').cfg('theme').cfg('tpl_dir'), '/project_\w+\.html.php/i');
-    foreach ($templates as &$template) $template = str_replace('project_','',str_replace('.html.php','',$template));
+    $templates =  getFiles(cfg('style_dir').cfg('theme').cfg('tpl_dir'),
+            '/project_\w+\.html.php/i');
+    foreach ($templates as &$template) {
+        $template = str_replace('project_','',$template);
+        $template = str_replace('.html.php','',$template);
+    }
     $output['templates'] = $templates;
 
-    //get the settings
-    $output['settings'] = getSettings($html->find("#project",0)->class);
-
+    //get the settings (merged with status settings)
+    $settings_a = getSettings($html->find("#project",0)->class);
     $menu_html = file_get_html(cfg('projects_dir').'projects.html');
-    $prj=$menu_html->find("a[href^=$project_name/]",0);
-    $output['prj_settings'] = getSettings($prj->parent()->class);
+    $prj = $menu_html->find("a[href^=$project_name/]",0);
+    $settings_b = getSettings($prj->parent()->class);
+    $output['settings'] = array_merge($settings_a,$settings_b);
     
     //prepare vars for template
-    $gallery_html = $html->find("#gallery",0)->outertext;
-    $output['gallery'] = str_replace('src="', 'src="'.cfg('base_url').'image/2/72/72/5/'.$project_name.'/', $gallery_html);
+    $thumbnail_base_url = cfg('base_url').'image/2/72/72/5/'.$project_name.'/';
+    $output['gallery'] = str_replace('src="', 'src="'.$thumbnail_base_url,
+            $html->find("#gallery",0)->outertext);
     $output['title'] = $html->find("h1",0)->innertext;
     $output['text'] = $html->find("#presentation",0)->innertext;
     $output['project_name'] = $project_name;
-
-
     $output['admin_title']='&larr; Projects list';
 
     output("project_edit.html.php", $output);
@@ -269,62 +274,53 @@ function ctrl_admin_project_edit($project_name) {
 function ctrl_admin_project_save($project_name) {
     checkAjax();
 
-    $project_dir = cfg('projects_dir') . $project_name . '/';
-    $project_file = $project_dir . 'project.html';
+    $project_file = cfg('projects_dir') . $project_name . '/' . 'project.html';
 
     include_lib('simple_html_dom/simple_html_dom.php');
     include_lib('htmlindent/htmlindent.php');
 
     $html = file_get_html($project_file);
 
-    //cleans and adds the gallery
+    //clean-up the gallery code
     $gallery = str_get_html(getPost('gallery',false));
     foreach($gallery->find('.controls') as $e) $e->outertext = '';
     foreach($gallery->find('div[style]') as $e) $e->style = NULL;
-    foreach($gallery->find('img') as $img) {
-        $img->src = substr($img->src, strrpos($img->src,"/")+1);
-    }
+    foreach($gallery->find('img') as $img) $img->src = substr($img->src, strrpos($img->src,"/")+1);
+
+    //rewrite html with new data
     $html->find("#gallery",0)->innertext = "\n\n".clean_html_code($gallery->innertext)."\n\n";
-
-    //process and adds the text
-    //@todo use a strip tag to cleanup the code received
     $html_text = clean_html_code(strip_tags(getPost('text',true),cfg('allowed_tags')));
-
     $html->find("#presentation",0)->innertext = "\n\n".$html_text."\n\n";
-
-    //adds the text
     $html->find("#title",0)->innertext = getPost("title");
-
-    //adds the template class
     $html->find("#project",0)->class = 'template-'.getPost("template");
 
     if(!file_put_contents($project_file, $html->save()))
-        die('Error writing "project.html".');
-    echo '1';
+        die('0#Error writing "project.html".');
+    echo "1#Project '$project_name' saved.";
 }
 
 function ctrl_admin_project_delete($project_name) {
     checkAjax();
     $projects = getDirs(cfg('projects_dir'));
-    if (!in_array($project_name, $projects)) die("This project does not exist.");
+    if (!in_array($project_name, $projects)) die("0#This project does not exist.");
     foreach(getFiles(cfg('projects_dir').$project_name) as $file)
-        if(!unlink(cfg('projects_dir').$project_name.'/'.$file)) die("Could not delete the file: ".$project_name);;
-    if(!rmdir(cfg('projects_dir').$project_name)) die("Could not delete the folder: ".$project_name);
-    echo '1';
+        if(!unlink(cfg('projects_dir').$project_name.'/'.$file)) die("0#Could not delete the file: ".$project_name);;
+    if(!rmdir(cfg('projects_dir').$project_name)) die("0#Could not delete the folder: ".$project_name);
+    echo "1#Project '$project_name' deleted.";
 }
 
 function ctrl_admin_project_create($project_name) {
     checkAjax();
     $projects = getDirs(cfg('projects_dir'));
     if (in_array($project_name, $projects))
-            die("This project already exists.");
+            die("0#This project already exists.");
     if(!mkdir(cfg('projects_dir').$project_name))
-        die('Error creating the folder.');
+        die('0#Error creating the folder.');
     $output['project_name'] = $project_name;
     $html = output("empty_project.html.php", $output, true);
     if(!file_put_contents(cfg('projects_dir').$project_name."/project.html", $html))
-        die('Error writing "project.html".');
-    echo '1';
+        die('0#Error writing "project.html".');
+    echo "1#Project '$project_name' created.";
 }
 
 function ctrl_admin_project_media_delete($project_name) {
@@ -332,10 +328,9 @@ function ctrl_admin_project_media_delete($project_name) {
     $file = cfg('projects_dir').$project_name.'/'.htmlentities($_POST['media_file']);
     if (file_exists($file)) {
         unlink($file);
-        echo '1';
-    } else {
-        echo '0';
+        die("1#File deleted.");
     }
+    die("0#File doesn't exist.");
 }
 
 function ctrl_admin_project_media_upload($project_name,$filename) {

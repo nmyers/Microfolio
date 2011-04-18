@@ -25,7 +25,7 @@
     </select>
 
     <div class="buttons" >
-    <a href="#" class="button status-<?= $prj_settings['status']; ?>" id="status" ><?= $prj_settings['status']; ?></a>
+    <a href="#" class="button status-<?= $settings['status']; ?>" id="status" ><?= $settings['status']; ?></a>
     <a href="#" class="button" id="saveproject" >save</a>
     </div>
     
@@ -45,40 +45,42 @@
             <li><a href="#" id="addembed" >add embed</a></li>
         </ul>
 
+        <div id="gallery_content" >
+        <?php print $gallery ?>
+        </div>
 
-    <?php print $gallery ?>
-    
-
-    <div id="edit_media_dialog" >
-        <div id="edit_image_form" >
-            <div class="preview" >
-                <img src="" width="200" />
+        <div id="edit_media_dialog" >
+            <div id="edit_image_form" >
+                <div class="preview" >
+                    <a href="#" target="_blank" >
+                    <img src=""/>
+                    </a>
+                </div>
+                <div class="form" >
+                    <label for="image_title" >Image title</label>
+                    <input id="image_title" type="text" value="title..." >
+                    <label for="image_caption" >Image Caption</label>
+                    <textarea id="image_caption" >caption...</textarea>
+                </div>
             </div>
-            <div class="form" >
-                <label for="image_title" >Image title</label>
-                <input id="image_title" type="text" value="title..." >
-                <label for="image_caption" >Image Caption</label>
-                <textarea id="image_caption" >caption...</textarea>
+            <div id="edit_embed_form" >
+                <div class="preview" >
+                    EMBED
+                </div>
+                <div class="form" >
+                    <label for="embed_url" >Embed url (http://vimeo.com/21429986)</label>
+                    <input id="embed_url" type="text" value="http://vimeo.com/" >
+                    <label for="embed_title" >Image title</label>
+                    <input id="embed_title" type="text" value="title..." >
+                    <label for="embed_caption" >Image Caption</label>
+                    <textarea id="embed_caption" >caption...</textarea>
+                </div>
+            </div>
+            <div id="edit_media_controls" >
+                <a href="#" class="button cancel" >cancel</a>
+                <a href="#" class="button save" >save</a>
             </div>
         </div>
-        <div id="edit_embed_form" >
-            <div class="preview" >
-                EMBED
-            </div>
-            <div class="form" >
-                <label for="embed_url" >Embed url (http://vimeo.com/21429986)</label>
-                <input id="embed_url" type="text" value="http://vimeo.com/" >
-                <label for="embed_title" >Image title</label>
-                <input id="embed_title" type="text" value="title..." >
-                <label for="embed_caption" >Image Caption</label>
-                <textarea id="embed_caption" >caption...</textarea>
-            </div>
-        </div>
-        <div id="edit_media_controls" >
-            <a href="#" class="save" >save</a>
-            <a href="#" class="cancel" >cancel</a>
-        </div>
-    </div>
 
     </div>
 

@@ -1,5 +1,5 @@
 /* 
- * admin_project_menu.js
+ * admin_project_list.js
  *
  *
  *
@@ -7,7 +7,7 @@
 
 $(function() {
 
-    sortable();
+    createSortable();
     addControls();
 
     /*
@@ -23,15 +23,15 @@ $(function() {
 
     $("#addsection").click(function(){
         if (newTitle = prompt("Section title:")) {
-            newSection = '<li><div class="section" ><a>'+newTitle+"</a></div></li>\n";
-            $("#menu-projects").append(newSection);
+            newSection = '<li><div class="section status-offline" ><a>'+newTitle+"</a></div></li>\n";
+            $("#list-projects").append(newSection);
             addControls();
         }
         return false;
     })
 
     $("#savechanges").click(function(){
-        saveMenu();
+        saveList();
         return false;
     })
 
@@ -39,14 +39,14 @@ $(function() {
 
 
 /**
- * Makes the menu sortable
+ * Makes the list sortable
  * using nested sortable
  *
  * @see http://mjsarfatti.com/sandbox/nestedSortable/
  *
  */
-function sortable() {
-    $('#menu-projects').addClass('sortable');
+function createSortable() {
+    $('#list-projects').addClass('sortable');
     $('ol.sortable').nestedSortable({
         forcePlaceholderSize: true,
         handle: 'div',
@@ -56,7 +56,8 @@ function sortable() {
         placeholder: 'placeholder',
         tabSize: 25,
         tolerance: 'pointer',
-        toleranceElement: '> div'
+        toleranceElement: '> div',
+        update: saveList
     });
 }
 
@@ -66,34 +67,44 @@ function sortable() {
  *
  */
 function newProject() {
-    var project_name = prompt("New project name:");
-    $.post(base_url+base_index+"admin_project_create/"+project_name,{
-        ajax: true
-    },function(data) {
-        if (data=='1') {
-            //@todo reload the list
-            alert("project created!");
-        } else {
-            alert(data);
-        }
-    })
+    if(project_name = prompt("New project name:")) {
+        showMessage('3#Adding new project...');
+        $.post(base_url+base_index+"admin_projects_list_save/",{
+            ajax: true,
+            listhtml: $("#list-projects").html()
+        },function(message) {
+            if (message.charAt(1)=='#' && message.charAt(0)=='1') {
+                $.post(base_url+base_index+"admin_project_create/"+project_name,{
+                    ajax: true
+                },function(message){
+                    showMessage(message);
+                    //reload list
+                    $('#list-holder').load(base_url+base_index+'admin_projects_list #list-projects',
+                    function(){
+                        createSortable();
+                        addControls();
+                    });
+                })
+            }
+        })
+    }
 }
 
 /**
- * Saves the menu
+ * Saves the list
  * -> ajax call
  *
  */
-function saveMenu() {
-    $.post(base_url+base_index+"admin_projects_menu_save/",{
+function saveList() {
+    //show message
+    showMessage('3#Saving projects list...');
+    $.post(base_url+base_index+"admin_projects_list_save/",{
         ajax: true,
-        menuhtml: $("#menu-projects").html()
-    },function(data) {
-        if (data=='1') {
-            //reload
-            alert("project saved!");
-        } else {
-            alert(data);
+        listhtml: $("#list-projects").html()
+    },function(message){
+        showMessage(message);
+        if (message.charAt(1)=='#' && message.charAt(0)=='1') {
+            addControls();
         }
     })
 }
@@ -105,20 +116,14 @@ function saveMenu() {
  *
  */
 function deleteProject(project_name) {
+    showMessage('3#Deleting project...');
     $.post(base_url+base_index+"admin_project_delete/"+project_name,{
         ajax: true
-    },function(data) {
-        if (data=='1') {
-            //reload
-            alert("project deleted!");
-        } else {
-            alert(data);
-        }
-    })
+    },showMessage)
 }
 
 /**
- * Adds a div with control links for each element of the menu
+ * Adds a div with control links for each element of the list
  * rename / edit / delete / publish / hide
  */
 function addControls() {
@@ -127,27 +132,29 @@ function addControls() {
      *  Adds controls to each project and section
      *  rename / edit / delete / publish / hide
      */
-    $("#menu-projects .controls").remove();
+    $("#list-projects .controls").remove();
     controls  = "<a href='#' class='button2 bt-rename' >rename</a>";
     controls += "<a href='#' class='button2 bt-edit' >edit</a>";
     controls += "<a href='#' class='button2 bt-delete' >delete</a>";
     controls += "<a href='#' class='button bt-status' >offline</a>";
-    $("#menu-projects div").append("<div class='controls' >"+controls+"</div>");
+    $("#list-projects div").append("<div class='controls' >"+controls+"</div>");
 
     // Removes publish and edit if it's a section
-    $("#menu-projects div.section .bt-publish").remove();
-    $("#menu-projects div.section .bt-edit").remove();
+    $("#list-projects div.section .bt-publish").remove();
+    $("#list-projects div.section .bt-edit").remove();
 
 
     /**
      * Rename an element
-     * @todo !!! > this will not rename the project but just the link..
+     * !!! > this will not rename the project but just the link's text.
      *
      */
     $(".controls .bt-rename").click(function(){
         firstElem = $(this).parent().prev();
-        if (newTitle = prompt("New menu title:",firstElem.text()))
+        if (newTitle = prompt("New item title:",firstElem.text())) {
             firstElem.text(newTitle);
+            saveList();
+        }
         return false;
     })
 
@@ -169,6 +176,7 @@ function addControls() {
         $("div",parentLi).eq(0).remove();
         $("ol",parentLi).eq(0).replaceWith($("ol",parentLi).eq(0).html());
         parentLi = parentLi.replaceWith(parentLi.html());
+        saveList();
         return false;
     })
 
@@ -186,6 +194,9 @@ function addControls() {
         return false;
     })
 
+    /**
+     * Toggle status
+     */
     $(".controls .bt-status").each(function(){
         parentDiv = $(this).parent().parent();
         if (parentDiv.hasClass('status-hidden')) $(this).addClass('status-hidden').text('hidden');
@@ -193,10 +204,6 @@ function addControls() {
         if (parentDiv.hasClass('status-online')) $(this).addClass('status-online').text('online');
     })
 
-    /**
-     * Hide/unhide a project or a section by toggling a class
-     * @todo might be better to remove the option of hiding a section?
-     */
     $(".controls .bt-status").click(function(){
         parentDiv = $(this).parent().parent();
         if (parentDiv.hasClass('status-offline')) {
@@ -214,6 +221,7 @@ function addControls() {
         }
         parentDiv.removeClass(oldClass).addClass(newClass);
         $(this).removeClass(oldClass).addClass(newClass).text(newText);
+        saveList();
         return false;
     })
 }
