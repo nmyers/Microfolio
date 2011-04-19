@@ -75,11 +75,12 @@ function addControls() {
      * Delete media
      */
     $( "#gallery .media a.delete" ).click(function(){
+        if(window.confirm('Are you sure?')) {
         var src = $('a.image',$(this).parent().parent()).attr('href');
-        alert(src);
         var filename = src.substring(src.lastIndexOf('/')+1);
         deleteMedia(filename);
         return false;
+        }
     })
 }
 
@@ -92,10 +93,15 @@ function createUploader() {
     var uploader = new qq.FileUploader({
         element: document.getElementById('file-uploader'),
         action: base_url+base_index+"admin_project_media_upload/"+project_name+"/",
-        allowedExtensions: ['jpg'],
+        allowedExtensions: ['jpg','jpeg'],
         onComplete: function(id, fileName, responseJSON){
-            //alert(fileName);
-            reloadGallery();
+            alert(id);
+            $(".qq-upload-list LI").eq(id).hide();
+            if($(".qq-upload-list LI:visible").size()==0) {
+                reloadGallery();
+            }
+
+            //
             //$(".qq-upload-list").delay(1000).text("");
         }
     });
@@ -116,7 +122,7 @@ function createSortable() {
  * Reloads the gallery/thumbnails using an ajax call
  */
 function reloadGallery() {
-    $('#gallery').load(base_url+base_index+'admin_project_edit/'+project_name+' #gallery',
+    $('#gallery_content').load(base_url+base_index+'admin_project_edit/'+project_name+' #gallery_content',
         function(){
             createSortable();
             addControls();
@@ -137,11 +143,12 @@ function saveProject() {
         text:  $("#project_text").val(),
         gallery: $("#gallery").html(),
         template: $("#template").val()
-    },function(data) {
-        if (data=='1') {
-            showMessage("saved");
+    },function(message) {
+        if (message.charAt(1)=='#' && message.charAt(0)=='1') {
+            reloadGallery();
+            showMessage(message);
         } else {
-            showMessage(data);
+            showMessage(message);
         }
     })
 }
@@ -215,11 +222,12 @@ function deleteMedia(media_file) {
         ajax: true,
         project_name: project_name,
         media_file: media_file
-    },function(data) {
-        if (data=='1') {
+    },function(message) {
+        if (message.charAt(1)=='#' && message.charAt(0)=='1') {
             reloadGallery();
+            showMessage(message);
         } else {
-            showMessage("error deleting media");
+            showMessage(message);
         }
     })
 }

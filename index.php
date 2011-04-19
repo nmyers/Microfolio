@@ -40,6 +40,16 @@ function ctrl_index() {
  */
 function ctrl_project($project_name) {
 
+    global $cfg;
+    
+    if (cfg('qmark_arg')=='edit') {
+        if (!is_logged()) redirect("/login");
+        $cfg['in_admin'] = true;
+        ctrl_admin_project_edit($project_name);
+        die();
+    }
+
+
     $project_dir = cfg('projects_dir') . $project_name . '/';
     $project_file = $project_dir . 'project.html';
 
@@ -209,6 +219,7 @@ function ctrl_admin_projects_list_save() {
  * @param string $project_name
  */
 function ctrl_admin_project_edit($project_name) {
+
     include_lib('simple_html_dom/simple_html_dom.php');
 
     $html = file_get_html(cfg('projects_dir').$project_name.'/project.html');
@@ -289,7 +300,7 @@ function ctrl_admin_project_save($project_name) {
 
     //rewrite html with new data
     $html->find("#gallery",0)->innertext = "\n\n".clean_html_code($gallery->innertext)."\n\n";
-    $html_text = clean_html_code(strip_tags(getPost('text',true),cfg('allowed_tags')));
+    $html_text = clean_html_code(strip_tags(getPost('text',false),cfg('allowed_tags')));
     $html->find("#presentation",0)->innertext = "\n\n".$html_text."\n\n";
     $html->find("#title",0)->innertext = getPost("title");
     $html->find("#project",0)->class = 'template-'.getPost("template");
@@ -299,6 +310,10 @@ function ctrl_admin_project_save($project_name) {
     echo "1#Project '$project_name' saved.";
 }
 
+/**
+ *
+ * @param <type> $project_name
+ */
 function ctrl_admin_project_delete($project_name) {
     checkAjax();
     $projects = getDirs(cfg('projects_dir'));
@@ -309,6 +324,10 @@ function ctrl_admin_project_delete($project_name) {
     echo "1#Project '$project_name' deleted.";
 }
 
+/**
+ *
+ * @param <type> $project_name
+ */
 function ctrl_admin_project_create($project_name) {
     checkAjax();
     $projects = getDirs(cfg('projects_dir'));
@@ -323,6 +342,19 @@ function ctrl_admin_project_create($project_name) {
     echo "1#Project '$project_name' created.";
 }
 
+function ctrl_admin_project_rename($old_project_name) {
+    $new_project_name = '';
+    /*
+     * This needs to edit the index file,
+     * the project.html file and finally rename the folder
+     * 
+     */
+}
+
+/**
+ *
+ * @param <type> $project_name
+ */
 function ctrl_admin_project_media_delete($project_name) {
     checkAjax();
     $file = cfg('projects_dir').$project_name.'/'.htmlentities($_POST['media_file']);
@@ -333,6 +365,11 @@ function ctrl_admin_project_media_delete($project_name) {
     die("0#File doesn't exist.");
 }
 
+/**
+ *
+ * @param <type> $project_name
+ * @param <type> $filename
+ */
 function ctrl_admin_project_media_upload($project_name,$filename) {
     include_lib('ajaxupload/upload.php');
 
@@ -408,6 +445,16 @@ function cfg($key) {
     global $cfg;
     return isset($cfg[$key]) ? $cfg[$key] : NULL;
 }
+
+function normalize_str($rawTag) {
+     $accent  =". ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõöøùúûýýþÿ";
+     $noaccent="--aaaaaaaceeeeiiiidnoooooouuuuybsaaaaaaaceeeeiiiidnoooooouuuyyby";
+     $tag=strtr(trim($rawTag),$accent,$noaccent);
+     $normalized_valid_chars = 'a-zA-Z0-9-';
+     $normalized_tag = preg_replace("/[^$normalized_valid_chars]/", "", $tag);
+     return strtolower($normalized_tag);
+}
+
 
 /**
  * Sanitize post values
@@ -581,6 +628,11 @@ function front_ctrl() {
     } else if (isset($_SERVER['REQUEST_URI'])) {
         $uri = str_replace(dirname($_SERVER['SCRIPT_NAME']),'',$_SERVER['REQUEST_URI']);
     }
+/*
+    $cfg['qmark_arg'] = '';
+    if (strrpos($uri, '?')!==false) {
+        list($uri,$cfg['qmark_arg']) = explode('?',$uri);
+    }*/
 
 
     $args = @explode("/", ltrim($uri,'/'));

@@ -321,11 +321,18 @@ OL.sortable DIV.controls
 .controls A
 {
 	float: right;
-	/*+placement:float-left 0px 0px;*/
+	/*+placement:float-left 0px 2px;*/
 	float: left;
 	position: relative;
 	left: 0px;
-	top: 0px;
+	top: 2px;
+	color: #000000;
+	text-decoration: none;
+	padding-right: 2px;
+}
+.controls A:hover
+{
+	text-decoration: underline;
 }
 .controls A.button.bt-status
 {
