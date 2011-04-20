@@ -16,7 +16,7 @@
     <div class="top-fixed" >
     <div class="pad" >
     
-    <input type="text" id="project_title" value="<?=$title?>" >
+    <input type="text" id="project_title" value="<?=domGet($project_dom,'#title')?>" >
 
     <select id="template">
     <?php foreach($templates as $template): ?>
@@ -34,7 +34,7 @@
 
     <div class="pad" >
 
-    <textarea id="project_text" name="project_text" ><?=$text?></textarea>
+    <textarea id="project_text" name="project_text" ><?=domGet($project_dom,'#presentation')?></textarea>
    
     
     
@@ -46,7 +46,9 @@
         </ul>
 
         <div id="gallery_content" >
-        <?php print $gallery ?>
+            <div id="gallery" >
+                <?=domGet($project_dom,'#gallery')?>
+            </div>
         </div>
 
         <div id="edit_media_dialog" >

@@ -12,7 +12,7 @@ $cfg['username']  = 'admin';
 
 $cfg['password']  = 'e3274be5c857fb42ab72d786e281b4b8';
 
-//$cfg['default_ctrl']  = 'index';
+$cfg['default_ctrl']  = 'index';
 
 //$cfg['base_url']  = "http://localhost/microfolio";
 

@@ -53,7 +53,7 @@ function ctrl_project($project_name) {
     $project_dir = cfg('projects_dir') . $project_name . '/';
     $project_file = $project_dir . 'project.html';
 
-    if (!file_exists($project_file)) redirect ();
+    if (!file_exists($project_file)) die('none'); //redirect ();
 
     //load html parser
     include_lib('simple_html_dom/simple_html_dom.php');
@@ -162,30 +162,8 @@ function ctrl_image() {
  * @global  $cfg
  */
 function ctrl_admin_projects_list() {
-    
-    include_lib('simple_html_dom/simple_html_dom.php');
-    $html = file_get_html(cfg('projects_dir').'projects.html');
-    $projects_dir = getDirs(cfg('projects_dir'));
-
-    //Removes project DIVs with no matching folder
-    $projects_found = array();
-    foreach($html->find('#list-projects .project a') as $project_link) {
-        $project_name = str_replace("/project.html","",$project_link->href);
-        if(!in_array($project_name, $projects_dir)) {
-            $project_link->parent()->parent()->outertext = "";
-        } else {
-            $projects_found[] = $project_name;
-        }
-    }
-
-    // Adds new DIVs for new project folders
-    $projects_new = array_diff($projects_dir,$projects_found);
-    $list_dom = $html->find("#list-projects",0);
-    foreach ($projects_new as $project_new) {
-        $new_project_link = "<li><div class=\"project status-offline\" ><a href=\"$project_new/project.html\" >$project_new</a></div></li>";
-        $list_dom->innertext = $list_dom->innertext .$new_project_link;
-    }
-    $output['list'] = $html->find("#list-projects",0);
+    $list_dom = model_projects_list_read(0, true);
+    $output['list'] = $list_dom->find("#list-projects",0);
     $output['admin_title']='Projects list';
     output("projects_list.html.php", $output);
 }
@@ -196,19 +174,12 @@ function ctrl_admin_projects_list() {
  */
 function ctrl_admin_projects_list_save() {
     checkAjax();
-
+    // Cleans up the html: removes controls and inline styles > could it be done in js instead?
     include_lib('simple_html_dom/simple_html_dom.php');
-    include_lib('htmlindent/htmlindent.php');
-
-    // Cleans up the html: removes controls and inline styles
-    $list_dom = str_get_html(getPost('listhtml',false));
+    $list_dom = str_get_html('<ol id="list-projects" >'.getPost('listhtml',false).'</ol>');
     foreach($list_dom->find('.controls') as $e) $e->outertext = '';
     foreach($list_dom->find('li[style]') as $e) $e->style = null;
-
-    $output['list_html'] = clean_html_code($list_dom->save());
-    $html = output("empty_projects_list.html.php", $output, true);
-    if(!file_put_contents(cfg('projects_dir')."projects.html", $html))
-        die('0#Error writing "projects.html".');
+    model_projects_list_update($list_dom);
     echo '1#List Saved';
 }
 
@@ -219,59 +190,12 @@ function ctrl_admin_projects_list_save() {
  * @param string $project_name
  */
 function ctrl_admin_project_edit($project_name) {
-
-    include_lib('simple_html_dom/simple_html_dom.php');
-
-    $html = file_get_html(cfg('projects_dir').$project_name.'/project.html');
-    $dir_imgs = getFiles(cfg('projects_dir').$project_name.'/', '/\.(jpg|jpeg)/i');
-
-    $found_imgs = array();
-    foreach($html->find('#gallery a.image') as $img) {
-        if(!in_array($img->href, $dir_imgs)) {
-            $img->parent()->outertext = ""; //not in dir? > remove div
-        } else {
-            $found_imgs[] = $img->href;
-        }
-    }
-
-    //add links for new images
-    $new_imgs = array_diff($dir_imgs, $found_imgs);
-    $gallery_dom = $html->find("#gallery",0);
-    foreach ($new_imgs as $new_img) {
-        $div = "<div class=\"media image\" >";
-        $div.= "   <a href=\"$new_img\" title=\"$new_img\" class=\"image\" >";
-        $div.= "     <img src=\"$new_img\" alt=\"$new_img\" />";
-        $div.= "   </a>";
-        $div.= "   <div class=\"caption\" > </div>"; //space left on purpose!
-        $div.= "</div>";
-        $gallery_dom->innertext = $gallery_dom->innertext .$div;
-    }
-
-    //get available frontend templates for current theme
-    $templates =  getFiles(cfg('style_dir').cfg('theme').cfg('tpl_dir'),
-            '/project_\w+\.html.php/i');
-    foreach ($templates as &$template) {
-        $template = str_replace('project_','',$template);
-        $template = str_replace('.html.php','',$template);
-    }
-    $output['templates'] = $templates;
-
-    //get the settings (merged with status settings)
-    $settings_a = getSettings($html->find("#project",0)->class);
-    $menu_html = file_get_html(cfg('projects_dir').'projects.html');
-    $prj = $menu_html->find("a[href^=$project_name/]",0);
-    $settings_b = getSettings($prj->parent()->class);
-    $output['settings'] = array_merge($settings_a,$settings_b);
-    
-    //prepare vars for template
-    $thumbnail_base_url = cfg('base_url').'image/2/72/72/5/'.$project_name.'/';
-    $output['gallery'] = str_replace('src="', 'src="'.$thumbnail_base_url,
-            $html->find("#gallery",0)->outertext);
-    $output['title'] = $html->find("h1",0)->innertext;
-    $output['text'] = $html->find("#presentation",0)->innertext;
+    $dom_prj = model_project_read($project_name,true);
+    $thumbnail_base_url = makeUrl('image/2/72/72/5/'.$project_name.'/');
+    $dom_prj->find("#gallery",0)->innertext = str_replace('src="', 'src="'.$thumbnail_base_url,$dom_prj->find("#gallery",0)->innertext);
+    $output['project_dom'] = $dom_prj;
     $output['project_name'] = $project_name;
-    $output['admin_title']='&larr; Projects list';
-
+    $output['admin_title']  ='< Projects list';
     output("project_edit.html.php", $output);
 }
 
@@ -285,6 +209,7 @@ function ctrl_admin_project_edit($project_name) {
 function ctrl_admin_project_save($project_name) {
     checkAjax();
 
+    /*
     $project_file = cfg('projects_dir') . $project_name . '/' . 'project.html';
 
     include_lib('simple_html_dom/simple_html_dom.php');
@@ -307,6 +232,23 @@ function ctrl_admin_project_save($project_name) {
 
     if(!file_put_contents($project_file, $html->save()))
         die('0#Error writing "project.html".');
+    echo "1#Project '$project_name' saved.";*/
+
+    include_lib('simple_html_dom/simple_html_dom.php');
+
+    //clean-up the gallery code
+    $gallery = str_get_html(getPost('gallery',false));
+    foreach($gallery->find('.controls') as $e) $e->outertext = '';
+    foreach($gallery->find('div[style]') as $e) $e->style = NULL;
+    foreach($gallery->find('img') as $img) $img->src = substr($img->src, strrpos($img->src,"/")+1);
+
+    $html .= '<div id="project" >';
+    $html .= '<h1 id="title" >'.getPost("title",false).'</h1>';
+    $html .= '<div id="presentation" >'.getPost('text',false).'</div>';
+    $html .= '<div id="gallery" >'.$gallery.'</div>';
+    $html .= '</div>';
+    
+    model_project_update($project_name, str_get_html($html));
     echo "1#Project '$project_name' saved.";
 }
 
@@ -342,15 +284,6 @@ function ctrl_admin_project_create($project_name) {
     echo "1#Project '$project_name' created.";
 }
 
-function ctrl_admin_project_rename($old_project_name) {
-    $new_project_name = '';
-    /*
-     * This needs to edit the index file,
-     * the project.html file and finally rename the folder
-     * 
-     */
-}
-
 /**
  *
  * @param <type> $project_name
@@ -373,8 +306,7 @@ function ctrl_admin_project_media_delete($project_name) {
 function ctrl_admin_project_media_upload($project_name,$filename) {
     include_lib('ajaxupload/upload.php');
 
-    //we need to clean the url and reinject the filename
-    //in a get to make the lib work.. dodgy
+    //we need to clean the url and reinject the file
     $filename = htmlentities(str_replace('?qqfile=', '', $filename));
     $_GET['qqfile']=$filename;
 
@@ -391,6 +323,7 @@ function ctrl_admin_project_media_upload($project_name,$filename) {
  *  HELPER FUNCTIONS
  * -------------------------------------------------------------------
  */
+
 
 /**
  * Returns an array of all the files matching the pattern
@@ -433,6 +366,11 @@ function getDirs($dir) {
 function include_lib($filename) {
     require_once cfg('lib_dir').$filename;
 }
+
+function load_model() {
+    require_once cfg('admin_dir').'model.php';
+}
+
 
 /**
  * Quit the app if it's not an ajax call
@@ -561,6 +499,10 @@ function includeCSS($filename,$media="all") {
     }
 }
 
+function domGet($dom,$ref) {
+    return $dom->find($ref,0)->innertext;
+}
+
 /*
  * -------------------------------------------------------------------
  *  USER LOGIN FUNCTIONS
@@ -616,6 +558,7 @@ function front_ctrl() {
     global $cfg;
 
     loadConfig();
+    load_model();
 
     //first thing to do (to make the login system work)
     session_start();

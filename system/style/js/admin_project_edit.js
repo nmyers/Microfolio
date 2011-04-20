@@ -3,13 +3,7 @@
  * 
  */
 
-$.fn.outer = function(val){
-    if(val){
-        $(val).insertBefore(this);
-        $(this).remove();
-    }
-    else{return $("<div>").append($(this).clone()).html();}
-}
+
 
 $(function() {
     createSortable();

@@ -46,3 +46,11 @@ function showMessage(message,style,delay) {
     $('.ui-layout-west').prepend('<div id="message" class="'+style+'" ><div class="in" >'+message+'</div></div>');
     $('#message').show().delay(delay).fadeOut(500,function(){$('#message').remove();});
 }
+
+$.fn.outer = function(val){
+    if(val){
+        $(val).insertBefore(this);
+        $(this).remove();
+    }
+    else{return $("<div>").append($(this).clone()).html();}
+}
