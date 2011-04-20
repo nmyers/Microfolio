@@ -156,6 +156,9 @@ function model_project_update($project_name, $update_dom) {
         $new_title = $update_dom->find("#title", 0)->innertext;
         $project_dom->find("#title", 0)->innertext = $new_title;
         /*
+         *
+         *
+         * 
         if (normalize_str($new_title) !== normalize_str($project_name)) {
             if (!rename(getProjectPath($project_name), getProjectPath($new_title)))
                 throw new Exception("Could not rename the folder: '$project_name'");
