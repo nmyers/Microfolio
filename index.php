@@ -121,7 +121,7 @@ function ctrl_login() {
  */
 function ctrl_dologin() {
     if (miniLog(getPost('username'), getPost('password'))) {
-        redirect("admin_projects_menu");
+        redirect("admin_projects_list");
     } else {
         redirect("login");
     }
@@ -162,9 +162,10 @@ function ctrl_image() {
  * @global  $cfg
  */
 function ctrl_admin_projects_list() {
-    $list_dom = model_projects_list_read(0, true);
-    $output['list'] = $list_dom->find("#list-projects",0);
-    $output['admin_title']='Projects list';
+    $projects = new ProjectsList();
+    $projects->sync();
+    $output['projects'] = $projects;
+    $output['admin_title'] = 'Projects list';
     output("projects_list.html.php", $output);
 }
 
@@ -176,10 +177,12 @@ function ctrl_admin_projects_list_save() {
     checkAjax();
     // Cleans up the html: removes controls and inline styles > could it be done in js instead?
     include_lib('simple_html_dom/simple_html_dom.php');
-    $list_dom = str_get_html('<ol id="list-projects" >'.getPost('listhtml',false).'</ol>');
+    $list_dom = str_get_html(getPost('listhtml',false));
     foreach($list_dom->find('.controls') as $e) $e->outertext = '';
     foreach($list_dom->find('li[style]') as $e) $e->style = null;
-    model_projects_list_update($list_dom);
+    $projects = new ProjectsList();
+    $projects->list = $list_dom->save();
+    $projects->save();
     echo '1#List Saved';
 }
 
@@ -190,11 +193,13 @@ function ctrl_admin_projects_list_save() {
  * @param string $project_name
  */
 function ctrl_admin_project_edit($project_name) {
-    $dom_prj = model_project_read($project_name,true);
+    $project = new Project($project_name);
+    $project->sync();
+    
     $thumbnail_base_url = makeUrl('image/2/72/72/5/'.$project_name.'/');
-    $dom_prj->find("#gallery",0)->innertext = str_replace('src="', 'src="'.$thumbnail_base_url,$dom_prj->find("#gallery",0)->innertext);
-    $output['project_dom'] = $dom_prj;
-    $output['project_name'] = $project_name;
+    $project->gallery = str_replace('src="', 'src="'.$thumbnail_base_url,$project->gallery);
+
+    $output['project'] = $project;
     $output['admin_title']  ='< Projects list';
     output("project_edit.html.php", $output);
 }
@@ -209,46 +214,20 @@ function ctrl_admin_project_edit($project_name) {
 function ctrl_admin_project_save($project_name) {
     checkAjax();
 
-    /*
-    $project_file = cfg('projects_dir') . $project_name . '/' . 'project.html';
-
+    //clean-up the gallery code (this could be done in js)
     include_lib('simple_html_dom/simple_html_dom.php');
-    include_lib('htmlindent/htmlindent.php');
-
-    $html = file_get_html($project_file);
-
-    //clean-up the gallery code
     $gallery = str_get_html(getPost('gallery',false));
     foreach($gallery->find('.controls') as $e) $e->outertext = '';
     foreach($gallery->find('div[style]') as $e) $e->style = NULL;
     foreach($gallery->find('img') as $img) $img->src = substr($img->src, strrpos($img->src,"/")+1);
 
-    //rewrite html with new data
-    $html->find("#gallery",0)->innertext = "\n\n".clean_html_code($gallery->innertext)."\n\n";
-    $html_text = clean_html_code(strip_tags(getPost('text',false),cfg('allowed_tags')));
-    $html->find("#presentation",0)->innertext = "\n\n".$html_text."\n\n";
-    $html->find("#title",0)->innertext = getPost("title");
-    $html->find("#project",0)->class = 'template-'.getPost("template");
+    $project = new Project($project_name);
+    $project->title = getPost("title",false);
+    $project->presentation = getPost("presentation",false);
+    $project->gallery = $gallery;
 
-    if(!file_put_contents($project_file, $html->save()))
-        die('0#Error writing "project.html".');
-    echo "1#Project '$project_name' saved.";*/
+    $project->save();
 
-    include_lib('simple_html_dom/simple_html_dom.php');
-
-    //clean-up the gallery code
-    $gallery = str_get_html(getPost('gallery',false));
-    foreach($gallery->find('.controls') as $e) $e->outertext = '';
-    foreach($gallery->find('div[style]') as $e) $e->style = NULL;
-    foreach($gallery->find('img') as $img) $img->src = substr($img->src, strrpos($img->src,"/")+1);
-
-    $html .= '<div id="project" >';
-    $html .= '<h1 id="title" >'.getPost("title",false).'</h1>';
-    $html .= '<div id="presentation" >'.getPost('text',false).'</div>';
-    $html .= '<div id="gallery" >'.$gallery.'</div>';
-    $html .= '</div>';
-    
-    model_project_update($project_name, str_get_html($html));
     echo "1#Project '$project_name' saved.";
 }
 
@@ -258,12 +237,13 @@ function ctrl_admin_project_save($project_name) {
  */
 function ctrl_admin_project_delete($project_name) {
     checkAjax();
-    $projects = getDirs(cfg('projects_dir'));
-    if (!in_array($project_name, $projects)) die("0#This project does not exist.");
-    foreach(getFiles(cfg('projects_dir').$project_name) as $file)
-        if(!unlink(cfg('projects_dir').$project_name.'/'.$file)) die("0#Could not delete the file: ".$project_name);;
-    if(!rmdir(cfg('projects_dir').$project_name)) die("0#Could not delete the folder: ".$project_name);
-    echo "1#Project '$project_name' deleted.";
+    try {
+        $project = new Project($project_name);
+        $project->delete();
+        die("1#Project '$project_name' deleted.");
+    } catch (Exception $e) {
+        die('0#'.$e->getMessage());
+    }
 }
 
 /**
@@ -272,16 +252,23 @@ function ctrl_admin_project_delete($project_name) {
  */
 function ctrl_admin_project_create($project_name) {
     checkAjax();
-    $projects = getDirs(cfg('projects_dir'));
-    if (in_array($project_name, $projects))
-            die("0#This project already exists.");
-    if(!mkdir(cfg('projects_dir').$project_name))
-        die('0#Error creating the folder.');
-    $output['project_name'] = $project_name;
-    $html = output("empty_project.html.php", $output, true);
-    if(!file_put_contents(cfg('projects_dir').$project_name."/project.html", $html))
-        die('0#Error writing "project.html".');
-    echo "1#Project '$project_name' created.";
+    try {
+        $project = new Project($project_name);
+        die("1#Project '$project_name' created.");
+    } catch (Exception $e) {
+        die('0#'.$e->getMessage());
+    }
+}
+
+//@todo >
+function ctrl_admin_project_rename() {
+    checkAjax();
+    try {
+        //
+        die('1#Project renamed succesfully.');
+    } catch (Exception $e) {
+        die('0#'.$e->getMessage());
+    }
 }
 
 /**
@@ -290,12 +277,14 @@ function ctrl_admin_project_create($project_name) {
  */
 function ctrl_admin_project_media_delete($project_name) {
     checkAjax();
-    $file = cfg('projects_dir').$project_name.'/'.htmlentities($_POST['media_file']);
-    if (file_exists($file)) {
-        unlink($file);
-        die("1#File deleted.");
+    try {
+        $project = new Project($project_name);
+        $project->delMedia(getPost('media_file'));
+        $project->save();
+        die('1#File deleted succesfully.');
+    } catch (Exception $e) {
+        die('0#' . $e->getMessage());
     }
-    die("0#File doesn't exist.");
 }
 
 /**
@@ -306,7 +295,7 @@ function ctrl_admin_project_media_delete($project_name) {
 function ctrl_admin_project_media_upload($project_name,$filename) {
     include_lib('ajaxupload/upload.php');
 
-    //we need to clean the url and reinject the file
+    //we need to clean the url and reinject the file in GET
     $filename = htmlentities(str_replace('?qqfile=', '', $filename));
     $_GET['qqfile']=$filename;
 
@@ -499,10 +488,6 @@ function includeCSS($filename,$media="all") {
     }
 }
 
-function domGet($dom,$ref) {
-    return $dom->find($ref,0)->innertext;
-}
-
 /*
  * -------------------------------------------------------------------
  *  USER LOGIN FUNCTIONS
@@ -571,7 +556,9 @@ function front_ctrl() {
     } else if (isset($_SERVER['REQUEST_URI'])) {
         $uri = str_replace(dirname($_SERVER['SCRIPT_NAME']),'',$_SERVER['REQUEST_URI']);
     }
-/*
+
+    /*
+     * This interferes with the file upload
     $cfg['qmark_arg'] = '';
     if (strrpos($uri, '?')!==false) {
         list($uri,$cfg['qmark_arg']) = explode('?',$uri);
@@ -690,6 +677,11 @@ function loadConfig() {
         die();
     }
 }
+
+
+///for debugging
+include 'system/lib/phpconsole/PhpConsole.php';
+PhpConsole::start();
 
 //Launches the front controlller if this file is not an include
 // = broken (doesn't resolve docroot properly)

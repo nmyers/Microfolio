@@ -9,23 +9,19 @@
     <?=includeJS("admin_project_edit.js");?>
 
     <script type="text/javascript" >
-        var project_name = '<?=$project_name?>';
+        var project_name = '<?=$project->name?>';
     </script>
 
 <?output('_menu.html.php',$output);?>
     <div class="top-fixed" >
     <div class="pad" >
     
-    <input type="text" id="project_title" value="<?=domGet($project_dom,'#title')?>" >
+    <input type="text" id="project_title" value="<?=$project->title?>" >
 
-    <select id="template">
-    <?php foreach($templates as $template): ?>
-        <option value="<?=$template?>" <?php if($settings['template']==$template) echo 'selected' ?> ><?=$template?></option>
-    <?php endforeach; ?>
-    </select>
+
 
     <div class="buttons" >
-    <a href="#" class="button status-<?= $settings['status']; ?>" id="status" ><?= $settings['status']; ?></a>
+    <a href="#" class="button status-" id="status" ></a>
     <a href="#" class="button" id="saveproject" >save</a>
     </div>
     
@@ -34,7 +30,7 @@
 
     <div class="pad" >
 
-    <textarea id="project_text" name="project_text" ><?=domGet($project_dom,'#presentation')?></textarea>
+    <textarea id="project_text" name="project_text" ><?=$project->presentation?></textarea>
    
     
     
@@ -47,7 +43,7 @@
 
         <div id="gallery_content" >
             <div id="gallery" >
-                <?=domGet($project_dom,'#gallery')?>
+                <?=$project->gallery?>
             </div>
         </div>
 

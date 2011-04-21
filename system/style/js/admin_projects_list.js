@@ -24,7 +24,7 @@ $(function() {
     $("#addsection").click(function(){
         if (newTitle = prompt("Section title:")) {
             newSection = '<li><div class="section status-offline" ><a>'+newTitle+"</a></div></li>\n";
-            $("#list-projects").append(newSection);
+            $("#projects").append(newSection);
             addControls();
         }
         return false;
@@ -46,7 +46,7 @@ $(function() {
  *
  */
 function createSortable() {
-    $('#list-projects').addClass('sortable');
+    $('#projects').addClass('sortable');
     $('ol.sortable').nestedSortable({
         forcePlaceholderSize: true,
         handle: 'div',
@@ -71,7 +71,7 @@ function newProject() {
         showMessage('3#Adding new project...');
         $.post(base_url+base_index+"admin_projects_list_save/",{
             ajax: true,
-            listhtml: $("#list-projects").html()
+            listhtml: $("#projects").html()
         },function(message) {
             if (message.charAt(1)=='#' && message.charAt(0)=='1') {
                 $.post(base_url+base_index+"admin_project_create/"+project_name,{
@@ -79,7 +79,7 @@ function newProject() {
                 },function(message){
                     showMessage(message);
                     //reload list
-                    $('#list-holder').load(base_url+base_index+'admin_projects_list #list-projects',
+                    $('#list-holder').load(base_url+base_index+'admin_projects_list #projects',
                     function(){
                         createSortable();
                         addControls();
@@ -100,7 +100,7 @@ function saveList() {
     showMessage('3#Saving projects list...');
     $.post(base_url+base_index+"admin_projects_list_save/",{
         ajax: true,
-        listhtml: $("#list-projects").html()
+        listhtml: $("#projects").html()
     },function(message){
         showMessage(message);
         if (message.charAt(1)=='#' && message.charAt(0)=='1') {
@@ -132,16 +132,16 @@ function addControls() {
      *  Adds controls to each project and section
      *  rename / edit / delete / publish / hide
      */
-    $("#list-projects .controls").remove();
+    $("#projects .controls").remove();
     controls  = "<a href='#' class='button2 bt-rename' >rename</a>";
     controls += "<a href='#' class='button2 bt-edit' >edit</a>";
     controls += "<a href='#' class='button2 bt-delete' >delete</a>";
     controls += "<a href='#' class='button bt-status' >offline</a>";
-    $("#list-projects div").append("<div class='controls' >"+controls+"</div>");
+    $("#projects div").append("<div class='controls' >"+controls+"</div>");
 
     // Removes publish and edit if it's a section
-    $("#list-projects div.section .bt-publish").remove();
-    $("#list-projects div.section .bt-edit").remove();
+    $("#projects div.section .bt-publish").remove();
+    $("#projects div.section .bt-edit").remove();
 
 
     /**

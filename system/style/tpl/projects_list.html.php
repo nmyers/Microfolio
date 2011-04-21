@@ -10,7 +10,9 @@
         <a href="#" id="newproject"  class="button">new project</a>
         <a href="#" id="addsection"  class="button">add section</a>
         <div id="list-holder" >
-            <?=$list?>
+            <ol id="projects" >
+            <?=$projects->list?>
+            </ol>
         </div>
     </div>
 <?output('_footer.html.php',$output);?>
