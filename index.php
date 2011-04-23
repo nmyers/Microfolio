@@ -40,15 +40,7 @@ function ctrl_index() {
  */
 function ctrl_project($project_name) {
 
-    global $cfg;
-    
-    if (cfg('qmark_arg')=='edit') {
-        if (!is_logged()) redirect("/login");
-        $cfg['in_admin'] = true;
-        ctrl_admin_project_edit($project_name);
-        die();
-    }
-
+  /*
 
     $project_dir = cfg('projects_dir') . $project_name . '/';
     $project_file = $project_dir . 'project.html';
@@ -97,8 +89,22 @@ function ctrl_project($project_name) {
 
     $tpl = cfg('style_dir') . cfg('theme') . 'functions.php';
     if (file_exists($tpl)) include $tpl;
+   
+   */
+    try {
+        $list = new ProjectsList();
+        $output['project'] = new Project($project_name);
+    } catch (Exception $e) {
+        die($e->getMessage());
+    }
 
-    //show the project
+    //$output['project']
+    $project_template = "project_default.html.php";
+    $tpl = cfg('style_dir') . cfg('theme') . 'functions.php';
+    if (file_exists($tpl)) include $tpl;
+
+    $output['menu'] = $list->menu;
+
     output($project_template,$output);
 }
 
@@ -253,7 +259,7 @@ function ctrl_admin_project_delete($project_name) {
 function ctrl_admin_project_create($project_name) {
     checkAjax();
     try {
-        $project = new Project($project_name);
+        $project = new Project($project_name,true);
         die("1#Project '$project_name' created.");
     } catch (Exception $e) {
         die('0#'.$e->getMessage());
@@ -264,7 +270,8 @@ function ctrl_admin_project_create($project_name) {
 function ctrl_admin_project_rename() {
     checkAjax();
     try {
-        //
+        $list = new ProjectsList();
+        $list->setProject(getPost($oldname), getPost($title), getPost($newname));
         die('1#Project renamed succesfully.');
     } catch (Exception $e) {
         die('0#'.$e->getMessage());
@@ -295,7 +302,8 @@ function ctrl_admin_project_media_delete($project_name) {
 function ctrl_admin_project_media_upload($project_name,$filename) {
     include_lib('ajaxupload/upload.php');
 
-    //we need to clean the url and reinject the file in GET
+    //need to clean the url and reinject the file in GET
+    //should modify the file upload.php to take care of it
     $filename = htmlentities(str_replace('?qqfile=', '', $filename));
     $_GET['qqfile']=$filename;
 
@@ -606,11 +614,11 @@ function loadConfig() {
         'allowed_tags'    => '<p><h1><h2><h3><em><strong><a><br>',
 
         //dir names
-        'cache_dir'       => 'system/cache/',
-        'admin_dir'       => 'system/',
-        'admin_style_dir' => 'system/style/',
-        'lib_dir'         => "system/lib/",
-        'projects_dir'    => "projects/",
+        'admin_dir'       => 'app/',
+        'cache_dir'       => 'app/cache/',
+        'admin_style_dir' => 'app/style/',
+        'lib_dir'         => "app/lib/",
+        'projects_dir'    => "content/",
         'style_dir'       => "style/",
         'tpl_dir'         => "tpl/",
         'js_dir'          => "js/",
@@ -618,8 +626,8 @@ function loadConfig() {
         'theme'           => "default/"
     );
 
-    if (file_exists('system/config/config.php')) {
-        include 'system/config/config.php';
+    if (file_exists('app/config/config.php')) {
+        include 'app/config/config.php';
 
         //cleanup theme
         $cfg['theme'] = rtrim($cfg['theme'],'/').'/';
@@ -664,7 +672,7 @@ function loadConfig() {
                 $output['password'] = md5($_POST['username'].$_POST['password']);
                 $output['username'] = $_POST['username'];
                 $php = "<?php \n".output("empty_config.php", $output, true);
-                if (!file_put_contents("system/config/config.php", $php))
+                if (!file_put_contents("app/config/config.php", $php))
                     die('Error writing the config! check auth.');
                 output("install_welcome.html.php",$output);
                 die();
@@ -680,7 +688,8 @@ function loadConfig() {
 
 
 ///for debugging
-include 'system/lib/phpconsole/PhpConsole.php';
+
+include 'app/lib/phpconsole/PhpConsole.php';
 PhpConsole::start();
 
 //Launches the front controlller if this file is not an include

@@ -28,7 +28,7 @@ set_images($project,0);
     </script>
 
 
-    <title><?=$project['title']?></title>
+    <title><?=$project->title?></title>
 </head>
     <body>
     <div id="menu">
@@ -36,15 +36,14 @@ set_images($project,0);
     </div>
     <div id="project" class="" >
 
-        <h1 id="title" ><?=$project['title']?></h1>
+        <h1 id="title" ><?=$project->title?></h1>
 
         <div id="presentation" >
-            <?=$project['presentation']?>
+            <?=$project->presentation?>
         </div><!-- end of presentation text -->
 
         <div id="gallery" >
-            <?=$project['gallery']?>
-
+            <?=$project->gallery?>
         </div><!-- end of gallery -->
               
 

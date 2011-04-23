@@ -6,13 +6,13 @@
 
 function set_thumbnails($project,$mode=1,$width=100,$height=0,$pos=5,$bkg='fff') {
     $base_uri = _set_uri($project,$mode,$width,$height,$pos,$bkg);
-    foreach($project['gallery']->find('div.image img') as $e) $e->src = makeUrl ($base_uri.$project['name'].'/'.$e->src);
+    foreach($project->dom->find('#gallery div.image img') as $e) $e->src = makeUrl ($base_uri.$project->name.'/'.$e->src);
 }
 
 
 function set_images($project,$mode=0,$width=800,$height=0,$pos=5,$bkg='fff') {
     $base_uri = _set_uri($project,$mode,$width,$height,$pos,$bkg);
-    foreach($project['gallery']->find('div.image a') as $e) $e->href = makeUrl ($base_uri.$project['name'].'/'.$e->href);
+    foreach($project->dom->find('#gallery div.image a') as $e) $e->href = makeUrl ($base_uri.$project->name.'/'.$e->href);
 }
 
 

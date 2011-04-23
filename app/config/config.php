@@ -18,6 +18,6 @@ $cfg['default_ctrl']  = 'index';
 
 //$cfg['base_dir']  = "/microfolio/";
 
-//$cfg['base_index'] = "";
+$cfg['base_index'] = "";
 
 
