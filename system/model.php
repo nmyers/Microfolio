@@ -153,6 +153,52 @@ class Project {
         $node->parent()->outertext = '';
     }
 
+    public function getSetting($key) {
+        $settings = $this->getSettings();
+        return $settings[$key];
+    }
+
+    //this should update the projects settings as well
+    public function setSetting($key,$value) {
+        $settings = $this->getSettings();
+        $settings[$key] = $value;
+        $this->setSettings($settings);
+        //should update the projects list file
+    }
+
+    private function getSettings() {
+        $class = $dom->find('#project',0)->class;
+        $classes = explode(" ", $class);
+        if (empty($classes))
+            return null;
+        $settings = array();
+        foreach ($classes as $class) {
+            if (stripos($class, '-') !== false) {
+                list($key, $val) = explode('-', $class);
+                $settings[$key] = $val;
+            } else {
+                $settings[$class] = "";
+            }
+        }
+        ksort($settings);
+        return $settings;
+    }
+
+    private function setSettings($array) {
+        $class = "";
+        $classes = array();
+        ksort($array);
+        foreach ($array as $key => $val)
+            $classes[] = empty($val) ? $key : $key . '-' . $val;
+        $dom->find('#project',0)->class = implode(' ', $classes);
+    }
+
+
+    //@todo implement
+    public function rename($new_name) {
+
+    }
+
     /**
      *
      */
@@ -242,6 +288,46 @@ class ProjectsList {
         }
         $this->save();
     }
+
+//    public function getSetting($project_name,$key) {
+//        $settings = $this->getSettings();
+//        return $settings[$key];
+//    }
+//
+//    //this should update the projects settings as well
+//    public function setSetting($project_name,$key,$value) {
+//        $settings = $this->getSettings();
+//        $settings[$key] = $value;
+//        $this->setSettings($settings);
+//        //should update the projects list file
+//    }
+//
+//    private function getSettings($project_name) {
+//        $class = $dom->find('#'.$project_name,0)->class;
+//        $classes = explode(" ", $class);
+//        if (empty($classes))
+//            return null;
+//        $settings = array();
+//        foreach ($classes as $class) {
+//            if (stripos($class, '-') !== false) {
+//                list($key, $val) = explode('-', $class);
+//                $settings[$key] = $val;
+//            } else {
+//                $settings[$class] = "";
+//            }
+//        }
+//        ksort($settings);
+//        return $settings;
+//    }
+//
+//    private function setSettings($project_name,$array) {
+//        $class = "";
+//        $classes = array();
+//        ksort($array);
+//        foreach ($array as $key => $val)
+//            $classes[] = empty($val) ? $key : $key . '-' . $val;
+//        $dom->find('#project',0)->class = implode(' ', $classes);
+//    }
 
     public function __get($key) {
         switch ($key) {
