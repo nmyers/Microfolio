@@ -5,7 +5,7 @@
 
 <iframe id="mainFrame" name="mainFrame" class="ui-layout-center"
 	width="800" height="600" frameborder="0" scrolling="auto"
-	src="<?= makeUrl("")?>"></iframe>
+	src=""></iframe>
 
 <div class="ui-layout-west">
 <div id="design" >&nbsp;</div>

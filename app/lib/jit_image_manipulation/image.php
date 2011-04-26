@@ -115,7 +115,6 @@
 	$image_path = $param->external === true ? "http://{$param->file}" :  cfg('projects_dir') . $param->file;
 
 	if($param->external !== true){
-            
 		$last_modified = filemtime($image_path);
 		$last_modified_gmt = gmdate('D, d M Y H:i:s', $last_modified) . ' GMT';
 		$etag = md5($last_modified . $image_path);
@@ -141,7 +140,7 @@
 
 		if($allowed == false){
 			header('HTTP/1.0 404 Not Found');
-			exit(__('Error: Connecting to that external site is not permitted.'));
+			exit('Error: Connecting to that external site is not permitted.');
 		}
 
              */
@@ -171,7 +170,7 @@
 		
 		if(!file_exists($image_path) || !is_readable($image_path)){
 			header('HTTP/1.0 404 Not Found');
-			trigger_error(__('Image <code>%s</code> could not be found.', array($image_path)), E_USER_ERROR);
+			trigger_error('Image <code>%s</code> could not be found.', array($image_path), E_USER_ERROR);
 		}
 		
 		$meta = Image::getMetaInformation($image_path);
@@ -235,7 +234,7 @@
 			break;
 	}
 	     //die('rendering');
-	if(!$image->display(intval(cfg('image_quality')))) trigger_error(__('Error generating image'), E_USER_ERROR);
+	if(!$image->display(intval(cfg('image_quality')))) trigger_error('Error generating image', E_USER_ERROR);
 	
 	if(CACHING && !is_file($cache_file)){ 
 		$image->save($cache_file, intval(cfg('image_quality')));

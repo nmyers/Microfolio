@@ -163,6 +163,51 @@ A.button.status-hidden
 {
 	background-color: #F29100;
 }
+/*dropdown*/
+A.dropdown
+{
+	background: #666;
+	color: #FFF;
+	text-decoration: none;
+	text-transform: uppercase;
+	padding: 5px 8px;
+	/*+border-radius:5px;*/
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	-khtml-border-radius: 5px;
+	border-radius: 5px 5px 5px 5px;
+}
+.dropdown.active
+{
+	display: none;
+}
+.dropdown_list
+{
+	background: #666;
+	color: #FFF;
+	text-decoration: none;
+	text-transform: uppercase;
+	padding: 5px 8px;
+	/*+border-radius:5px;*/
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	-khtml-border-radius: 5px;
+	border-radius: 5px 5px 5px 5px;
+}
+.dropdown_list LI
+{
+	list-style: none;
+}
+.dropdown_list A
+{
+	color: #FFF;
+	text-decoration: none;
+	text-transform: uppercase;
+}
+.dropdown_list A:hover
+{
+	background: #444;
+}
 /*MESSAGE*/
 #message
 {
@@ -360,6 +405,14 @@ OL.sortable DIV.controls
 	border-bottom: 1px solid #B3B3B3;
 	height: 83px;
 }
+.top-fixed .template-select
+{
+	margin-top: 3px;
+}
+.top-fixed .template-select .dropdown_list
+{
+	margin-top: -3px;
+}
 .top-fixed .buttons
 {
 	/*+placement:anchor-top-right 6px 56px;*/
@@ -413,7 +466,7 @@ INPUT#project_title
 {
 	width: 200px;
 }
-#edit_image_form .preview
+#edit_media_dialog .preview
 {
 	/*+placement:float-left 0px 0px;*/
 	float: left;
@@ -421,7 +474,7 @@ INPUT#project_title
 	left: 0px;
 	top: 0px;
 	height: 200px;
-	width: 200px;
+	width: 250px;
 	overflow: hidden;
 	margin: 6px;
 	background-color: #F0F0F0;

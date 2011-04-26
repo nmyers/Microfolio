@@ -1,7 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     
     <?=includeCSS("style.css")?>
@@ -11,7 +10,6 @@
         var base_dir   = '<?=cfg('base_dir')?>';
         var base_index = '<?=cfg('base_index')?>';
         var lib_dir    = '<?=cfg('lib_dir')?>';
-        //var theme_dir  = '<?=cfg('style_dir').cfg('theme')?>';
     </script>
 
     <?=includeJS("jquery-1.5.2.min.js")?>

@@ -7,16 +7,13 @@
  * $prj->load('test');  //loads an existing project
  * $prj->save();   //saves the current dom in file
  * $prj->delete(); //deletes the whole project (folder and files)
- * $prj->sync();   //syncs the project data with actual content of folder
+ * $prj->sync();   //syncs the project data with actual content of folder & saves
  * $prj->rename(); //renames a project (rename folder)
  *
  * $prj->name         //read only
  * $prj->title        //text
  * $prj->description  //html content
- * $prj->settings     //assoc array
- * eg: $prj->settings['template'] = 'new-template';
- *
- * $prj->gallery      //gallery dom or assoc array
+ * $prj->gallery      
  *
  */
 
@@ -25,6 +22,10 @@ class Project {
     private $name;
     private $folder;
     private $html_file;
+    
+    private $processGallery;
+    private $thumb_base_uri;
+    private $image_base_gallery;
 
     private $dom;
     private $gallery;
@@ -35,6 +36,7 @@ class Project {
         $this->name = normalize_str($name);
         $this->folder = cfg('projects_dir') . $this->name;
         $this->html_file = $this->folder . '/project.html';
+        $this->processGallery = false;
 
         //dom parser
         include_lib('simple_html_dom/simple_html_dom.php');
@@ -156,7 +158,10 @@ class Project {
 
     public function getSetting($key) {
         $settings = $this->getSettings();
-        return $settings[$key];
+        if (isset($settings[$key]))
+            return $settings[$key];
+        else
+            return false;
     }
 
     //this should update the projects settings as well
@@ -164,11 +169,10 @@ class Project {
         $settings = $this->getSettings();
         $settings[$key] = $value;
         $this->setSettings($settings);
-        //should update the projects list file
     }
 
     private function getSettings() {
-        $class = $dom->find('#project',0)->class;
+        $class = $this->dom->find('#project',0)->class;
         $classes = explode(" ", $class);
         if (empty($classes))
             return null;
@@ -185,13 +189,13 @@ class Project {
         return $settings;
     }
 
-    private function setSettings($array) {
+    private function setSettings($array,$propagate=true) {
         $class = "";
         $classes = array();
         ksort($array);
         foreach ($array as $key => $val)
             $classes[] = empty($val) ? $key : $key . '-' . $val;
-        $dom->find('#project',0)->class = implode(' ', $classes);
+        $this->dom->find('#project',0)->class = implode(' ', $classes);
     }
 
 
@@ -206,17 +210,91 @@ class Project {
         return true;
     }
 
+    public function set_thumbnails($mode=1,$width=100,$height=0,$pos=5,$bkg='fff') {
+        $this->thumb_base_uri = $this->_set_uri($mode,$width,$height,$pos,$bkg);
+        $this->processGallery = true;
+        debug('set thumbnails');
+        //foreach($project->dom->find('#gallery div.image img') as $e) $e->src = makeUrl ($base_uri.$this->name.'/'.$e->src);
+    }
+
+
+    public function set_images($mode=0,$width=800,$height=0,$pos=5,$bkg='fff') {
+        $this->image_base_uri = $this->_set_uri($mode,$width,$height,$pos,$bkg);
+        $this->processGallery = true;
+        debug('set images');
+        //foreach($this->dom->find('#gallery div.image a') as $e) $e->href = makeUrl ($base_uri.$this->name.'/'.$e->href);
+    }
+
+
+    private function _set_uri($mode=1,$width=100,$height=0,$pos=5,$bkg='fff') {
+        //original
+        if ($mode==0) $base_uri = 'image/';
+        //resize
+        if ($mode==1) $base_uri = sprintf('image/%s/%s/%s/',$mode,$width,$height);
+        //crop
+        if ($mode==2) $base_uri = sprintf('image/%s/%s/%s/%s/',$mode,$width,$height,$pos);
+        //reframe
+        if ($mode==3) $base_uri = sprintf('image/%s/%s/%s/%s/%s/',$mode,$width,$height,$pos,$bkg);
+
+        return $base_uri;
+    }
+
+    private function _processedGallery() {
+        debug('process? '.$this->processGallery);
+        if(!$this->processGallery) return $this->dom->find('#gallery',0)->innertext;
+        //
+        $gallerydom = $this->dom->find('#gallery',0);
+
+        //process images
+        if (!empty($this->thumb_base_uri))
+            foreach($gallerydom->find('div.image img') as $e)
+                    $e->src = makeUrl ($this->thumb_base_uri.$this->name.'/'.$e->src);
+        if (!empty($this->image_base_uri))
+            foreach($gallerydom->find('div.image a') as $e)
+                    $e->src = makeUrl ($this->image_base_uri.$this->name.'/'.$e->src);
+
+        //process embeds
+
+        foreach($gallerydom->find('div.embed a') as $e) {
+           if (!empty($this->thumb_base_uri))
+                   $thumb_url = makeUrl ($this->thumb_base_uri.'1/'.str_replace('http://','',getEmbedCode ($e->href,true)));
+                   $e->innertext = "<img src='$thumb_url' />";
+//           if (!empty($this->image_base_uri))
+//                $e->innertext = getEmbedCode ($e->src);
+        }
+
+        return $gallerydom->innertext;
+    }
+
+    private function _getMediaFiles() {
+        $files = array();
+        foreach($this->dom->find('#gallery .media') as $e) {
+            $fileObj = new stdClass;
+            $fileObj->src = $e->find('a',0)->href;
+            if (stripos($e->class,'image')!==false)
+                $fileObj->html = sprintf ('<img src="%s" />',  makeUrl ('image/'.$this->name.'/'.$fileObj->src));
+            if (stripos($e->class,'embed')!==false)
+                $fileObj->html = getEmbedCode($fileObj->src);
+            $files[]=$fileObj;
+        }
+        return $files;
+    }
+
     /**
      *
      */
-
     public function __get($key) {
         switch ($key) {
             case 'title': return $this->dom->find('#title',0)->innertext;
             case 'presentation': return $this->dom->find('#presentation',0)->innertext;
-            case 'gallery': return $this->dom->find('#gallery',0)->innertext;
+            case 'gallery': return $this->_processedGallery();
+            case 'mediafiles': return $this->_getMediaFiles();
             case 'dom': return $this->dom;
             case 'name' : return $this->name;
+            case 'status' :
+                $list = new ProjectsList();
+                return $list->getSetting($this->name,'status');
+            case 'template' : return $this->getSetting('template');
         }
     }
 
@@ -230,6 +308,14 @@ class Project {
                 break;
             case 'gallery':
                 $this->dom->find('#gallery',0)->innertext = $value;
+                break;
+            case 'status':
+                $list = new ProjectsList();
+                $list->setSetting($this->name,'status',$value);
+                $list->save();
+                break;
+            case 'template':
+                $this->setSetting('template',$value);
                 break;
         }
     }
@@ -245,6 +331,9 @@ class Project {
 
 }
 
+
+//might be good to make it a singleton
+//@todo http://php.net/manual/en/language.oop5.patterns.php
 class ProjectsList {
 
     private $dom;
@@ -303,14 +392,14 @@ class ProjectsList {
 
     public function setProject($project_name,$title=null,$uri=null) {
         if ($title!=null) {
-            $dom->find('#'.$project_name.' a',0)->innertext = htmlentities($title);
+            $this->dom->find('#'.$project_name.' a',0)->innertext = htmlentities($title);
         }
         if ($uri!=null) {
             $uri = normalize_str($uri);
             $project = new Project($project_name);
             $project->rename($uri);
-            $dom->find('#'.$project_name.' a',0)->href = $uri.'/project.html';
-            $dom->find('#'.$project_name,0)->id = $uri;
+            $this->dom->find('#'.$project_name.' a',0)->href = $uri.'/project.html';
+            $this->dom->find('#'.$project_name,0)->id = $uri;
         }
     }
 
@@ -324,11 +413,10 @@ class ProjectsList {
         $settings = $this->getSettings($project_name);
         $settings[$key] = $value;
         $this->setSettings($project_name,$settings);
-        //should update the projects list file
     }
 
-    private function getSettings($project_name) {
-        $class = $dom->find('#'.$project_name,0)->class;
+    public function getSettings($project_name) {
+        $class = $this->dom->find('#'.$project_name,0)->class;
         $classes = explode(" ", $class);
         if (empty($classes))
             return null;
@@ -345,20 +433,20 @@ class ProjectsList {
         return $settings;
     }
 
-    private function setSettings($project_name,$array) {
+    public function setSettings($project_name,$array) {
         $class = "";
         $classes = array();
         ksort($array);
         foreach ($array as $key => $val)
             $classes[] = empty($val) ? $key : $key . '-' . $val;
-        $dom->find('#'.$project_name,0)->class = implode(' ', $classes);
+        $this->dom->find('#'.$project_name,0)->class = implode(' ', $classes);
     }
 
     private function getMenu() {
         $tempdom = $this->dom;
         foreach($tempdom->find('.status-offline, .status-hidden') as $node)
             $node->parent()->outertext = '';
-        return $tempdom->save();
+        return $tempdom->find('#projects',0)->innertext;
     }
 
     public function __get($key) {

@@ -47,6 +47,10 @@ function showMessage(message,style,delay) {
     $('#message').show().delay(delay).fadeOut(500,function(){$('#message').remove();});
 }
 
+function updateIframe(src) {
+    $('#mainFrame').attr('src',src);
+}
+
 $.fn.outer = function(val){
     if(val){
         $(val).insertBefore(this);

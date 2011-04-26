@@ -24,13 +24,35 @@ $(function() {
         addEmbed();
         return false;
     })
+
+    $("a#status").click(function(){
+        if ($(this).hasClass('status-offline')) {
+            oldClass = 'status-offline';
+            newClass = 'status-online';
+            newText  = 'online';
+        } else if($(this).hasClass('status-online')) {
+            oldClass = 'status-online';
+            newClass = 'status-hidden';
+            newText  = 'hidden';
+        } else if($(this).hasClass('status-hidden')) {
+            oldClass = 'status-hidden';
+            newClass = 'status-offline';
+            newText  = 'offline';
+        }
+        $(this).removeClass(oldClass).addClass(newClass).text(newText);
+        saveProject();
+        return false;
+    })
+
+    $('#template').dropp();
 })
 
 function initWysiwyg() {
 
     $('#project_text').uEditor({
             toolbarItems : ['bold','italic','link','h1','h2','h3','p','htmlsource'],
-            containerClass : 'uEditor'
+            containerClass : 'uEditor',
+            stylesheet : editorCSSUrl
     });
     
 }
@@ -89,7 +111,6 @@ function createUploader() {
         action: base_url+base_index+"admin_project_media_upload/"+project_name+"/",
         allowedExtensions: ['jpg','jpeg'],
         onComplete: function(id, fileName, responseJSON){
-            alert(id);
             $(".qq-upload-list LI").eq(id).hide();
             if($(".qq-upload-list LI:visible").size()==0) {
                 reloadGallery();
@@ -121,6 +142,7 @@ function reloadGallery() {
             createSortable();
             addControls();
         });
+        updateIframe(base_url+base_index+'project/'+project_name)
 }
 
 /**
@@ -134,9 +156,10 @@ function saveProject() {
     $.post(base_url+base_index+"admin_project_save/"+project_name,{
         ajax: true,
         title: $("#project_title").attr("value"),
-        text:  $("#project_text").val(),
+        presentation:  $("#project_text").val(),
         gallery: $("#gallery").html(),
-        template: $("#template").val()
+        template: $("#template").val(),
+        status: $("#status").text()
     },function(message) {
         if (message.charAt(1)=='#' && message.charAt(0)=='1') {
             reloadGallery();
@@ -165,13 +188,13 @@ function editMedia(media_div) {
 
         //populate the form
         $("#edit_image_form img").attr("src",$("img",media_div).attr("src").replace("/2/72/72/5/","/0/"));
-        $("#image_title").val($("a",media_div).attr("title"));
-        $("#image_caption").val($(".caption",media_div).text());
+        $("#image_title").val($(".controls",media_div).next('a').attr("title"));
+        $("#image_caption").val($(".caption",media_div).text().replace(/[ \t]+/g," ").replace(/(\n )+/g,"\n")); //need to remove extra spaces added by html syntax
 
         //buttons
         $("#edit_media_controls .save").click(function(){
             $("img",media_div).attr("alt",$("#image_title").val());
-            $("a",media_div).attr("title",$("#image_title").val());
+            $(".controls",media_div).next('a').attr("title",$("#image_title").val());
             $(".caption",media_div).text($("#image_caption").val());
             $("#gallery_content").show();
             $("#edit_media_dialog").hide();
@@ -185,9 +208,11 @@ function editMedia(media_div) {
 
         //populate the form
         $("#edit_embed_form .preview").html($("a.embed",media_div).outer());
+        $('#edit_embed_form .preview').load(base_url+base_index+'admin_preview_embed/'+escape($("a.embed",media_div).attr("href")));
+
         $("#embed_url").val($("a.embed",media_div).attr("href"));
         $("#embed_title").val($("a.embed",media_div).attr("title"));
-        $("#embed_caption").val($(".caption",media_div).text());
+        $("#embed_caption").val($(".caption",media_div).text().replace(/[ \t]+/g," ").replace(/(\n )+/g,"\n"));
 
         //buttons
         $("#edit_media_controls .save").click(function(){

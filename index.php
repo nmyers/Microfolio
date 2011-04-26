@@ -30,81 +30,35 @@
  * Default controller
  */
 function ctrl_index() {
-    redirect('project/test');
+    redirect('project/home');
 }
 
 /**
  * Displays a project
- *
  * @param string $project_name
  */
 function ctrl_project($project_name) {
-
-  /*
-
-    $project_dir = cfg('projects_dir') . $project_name . '/';
-    $project_file = $project_dir . 'project.html';
-
-    if (!file_exists($project_file)) die('none'); //redirect ();
-
-    //load html parser
-    include_lib('simple_html_dom/simple_html_dom.php');
-    $menu_html = file_get_html(cfg('projects_dir').'projects.html');
-
-    //remove unpublished project from the list
-    if(!is_logged ()) {
-        foreach($menu_html->find('div[class*=status-offline], div[class*=status-hidden]') as $e)
-                $e->parent()->outertext = '';
-        $menu_html = str_get_html($menu_html->save());
-    }
-
-    //redirect if the project is not found (= not published)
-
-    if(!$prj=$menu_html->find("a[href^=$project_name/]",0)) redirect();
-
-    //parse the project classes = project settings
-    $prj_settings = getSettings($prj->parent()->class);
-
-    $project_html = file_get_html($project_file);
-
-
-    //Check for a project template
-    $project_template = "project_default.html.php";
-    if (isset($prj_settings['template'])) {
-        $template_file = "project_".$prj_settings['template'].".html.php";
-        if (file_exists(cfg('style_dir') . cfg('theme') . cfg('tpl_dir') . $template_file)) {
-            $project_template = $template_file;
-        }
-    }
-    $output['project_name'] = $project_name;
-    $output['menu'] = $menu_html->find("#menu-projects",0)->outertext;
-    $output['project'] = array (
-        'title'        => $project_html->find("#title",0)->innertext,
-        'presentation' => $project_html->find("#presentation",0),
-        'gallery'      => $project_html->find("#gallery",0),
-        'name'         => $project_name,
-        'dir'          => $project_dir,
-        'settings'     => $prj_settings
-    );
-
-    $tpl = cfg('style_dir') . cfg('theme') . 'functions.php';
-    if (file_exists($tpl)) include $tpl;
-   
-   */
     try {
         $list = new ProjectsList();
-        $output['project'] = new Project($project_name);
+        $project = new Project($project_name);
     } catch (Exception $e) {
         die($e->getMessage());
     }
 
-    //$output['project']
+    //sets the template
     $project_template = "project_default.html.php";
-    $tpl = cfg('style_dir') . cfg('theme') . 'functions.php';
-    if (file_exists($tpl)) include $tpl;
+    if ($tpl = $project->getSetting('template')) {
+        $tpl =  "project_$tpl.html.php";
+        if (file_exists(cfg('style_dir') . cfg('theme') . cfg('tpl_dir') . $tpl))
+            $project_template = $tpl;
+    }
 
+    //includes helper functions if needed
+    $functions = cfg('style_dir') . cfg('theme') . 'functions.php';
+    if (file_exists($functions)) include $functions;
+
+    $output['project'] = $project;
     $output['menu'] = $list->menu;
-
     output($project_template,$output);
 }
 
@@ -122,7 +76,6 @@ function ctrl_login() {
 /**
  * Public Controller - DoLogin
  * Test the login and redirects
- *
  * @global array $cfg
  */
 function ctrl_dologin() {
@@ -145,6 +98,9 @@ function ctrl_logout() {
 /**
  * Dynamic image resizing using jit_image_manipulation class
  * @see https://github.com/pointybeard/jit_image_manipulation
+ *
+ * note for external images, the url for ext images should not be encoded
+ * http://www.webmasterworld.com/apache/3279075.htm
  */
 function ctrl_image() {
     include_lib('jit_image_manipulation/image.php');
@@ -202,9 +158,14 @@ function ctrl_admin_project_edit($project_name) {
     $project = new Project($project_name);
     $project->sync();
     
-    $thumbnail_base_url = makeUrl('image/2/72/72/5/'.$project_name.'/');
-    $project->gallery = str_replace('src="', 'src="'.$thumbnail_base_url,$project->gallery);
+    //$thumbnail_base_url = makeUrl('image/2/72/72/5/'.$project_name.'/');
+    $project->set_thumbnails(2,72,72);
 
+    //$project->gallery = str_replace('src="', 'src="'.$thumbnail_base_url,$project->gallery);
+
+    $templates = getFiles(cfg('style_dir') . cfg('theme') . cfg('tpl_dir'),'/project_.*\.html\.php/');
+    foreach ($templates as &$template) $template = str_replace ('project_', '', str_replace ('.html.php', '', $template));
+    $output['templates'] = $templates;
     $output['project'] = $project;
     $output['admin_title']  ='< Projects list';
     output("project_edit.html.php", $output);
@@ -231,6 +192,8 @@ function ctrl_admin_project_save($project_name) {
     $project->title = getPost("title",false);
     $project->presentation = getPost("presentation",false);
     $project->gallery = $gallery;
+    $project->status = getPost("status");
+    $project->template = getPost("template");
 
     $project->save();
 
@@ -278,6 +241,10 @@ function ctrl_admin_project_rename() {
     }
 }
 
+function ctrl_admin_preview_embed() {
+    die(getEmbedCode(urldecode(cfg('args'))));
+}
+
 /**
  *
  * @param <type> $project_name
@@ -314,6 +281,24 @@ function ctrl_admin_project_media_upload($project_name,$filename) {
     // to pass data through iframe you will need to encode all html tags
     echo htmlspecialchars(json_encode($result), ENT_NOQUOTES);
 }
+
+/**
+ *
+ * @param <type> $project_name
+ */
+function ctrl_admin_project_set_setting($project_name,$key,$value) {
+    checkAjax();
+    try {
+        $project = new Project($project_name);
+        $project->setSetting($key,$value);
+        $project->save();
+        die("1#Setting '$key' updated succesfully.");
+    } catch (Exception $e) {
+        die('0#' . $e->getMessage());
+    }
+}
+
+
 
 /*
  * -------------------------------------------------------------------
@@ -390,7 +375,6 @@ function normalize_str($rawTag) {
      return strtolower($normalized_tag);
 }
 
-
 /**
  * Sanitize post values
  * @param <type> $key
@@ -400,19 +384,6 @@ function getPost($key,$sanitize=true) {
     $val = stripslashes($_POST[$key]);
     if ($sanitize)  $val = filter_var($val, FILTER_SANITIZE_STRING);
     return $val;
-}
-
-function getSettings($class) {
-    $prj_classes = explode(" ",$class);
-    if (empty($prj_classes)) return array();
-    $prj_settings = array();
-    foreach ($prj_classes as $class) {
-        if (stripos($class,'-')!==false) {
-            list($key,$val) = explode('-',$class);
-            $prj_settings[$key]=$val;
-        }
-    }
-    return $prj_settings;
 }
 
 /*
@@ -457,8 +428,6 @@ function output($tpl, $contentArray=array(), $returnToString=FALSE) {
 
 /**
  * Returns a full URL from a given URI
- *
- * @global array  $cfg     The global configuration
  * @param  string $action  The URI
  * @return string          The full URL
  */
@@ -468,7 +437,6 @@ function makeUrl($action) {
 
 /**
  * Forces to redirect to a new URI
- *
  * @param string $action The URI
  */
 function redirect($action="") {
@@ -476,24 +444,49 @@ function redirect($action="") {
     die();
 }
 
-function includeJS($filename) {
+function includeJS($filename,$tag=true) {
     $js_filename = cfg('in_admin') ? cfg('admin_style_dir') : cfg('style_dir').cfg('theme');
     $js_filename .= cfg('js_dir').$filename;
     
     if (file_exists($js_filename)) {
         $js_url = cfg('base_url').$js_filename;
+        if (!$tag) return $js_url;
         return "<script type=\"text/javascript\" src=\"$js_url\"></script>";
     }
 }
 
-function includeCSS($filename,$media="all") {
+function includeCSS($filename,$tag=true) {
     $css_filename = cfg('in_admin') ? cfg('admin_style_dir') : cfg('style_dir').cfg('theme');
     $css_filename .= cfg('css_dir').$filename;
 
     if (file_exists($css_filename)) {
         $css_url = cfg('base_url').$css_filename;
-        return "<link href=\"$css_url\" rel=\"stylesheet\" type=\"text/css\" media=\"$media\" />";
+        if (!$tag) return $css_url;
+        return "<link href=\"$css_url\" rel=\"stylesheet\" type=\"text/css\" media=\"all\" />";
     }
+}
+
+function  getEmbedCode($url,$preview=false) {
+
+    //youtube
+    $pattern = '/^http:\/\/(?:www\.)?youtube.com\/watch\?(?=.*v=(\w+))(?:\S+)?$/i';
+    if (preg_match($pattern, $url, $matches))
+    if ($preview) {
+        return 'http://img.youtube.com/vi/'.$matches[1].'/0.jpg';
+    } else {
+        return '<div class="embed" ><iframe title="YouTube video player" width="100%" height="100%" src="http://www.youtube.com/embed/'.$matches[1].'?rel=0" frameborder="0" allowfullscreen></iframe></div>';
+    }
+    $pattern = '/^http:\/\/(www\.)?vimeo\.com\/(clip\:)?(\d+).*$/i';
+    if (preg_match($pattern, $url, $matches))
+    if ($preview) {
+        $hash = unserialize(file_get_contents("http://vimeo.com/api/v2/video/".$matches[3].".php"));
+        
+        return $hash[0]['thumbnail_large'];
+    } else {
+        return'<div class="embed" ><iframe src="http://player.vimeo.com/video/'.$matches[3].'?title=0&amp;byline=0&amp;portrait=0&amp;color=00adef" width="100%" height="100%" frameborder="0"></iframe></div>';
+    }
+
+    return 'none found';
 }
 
 /*
@@ -533,8 +526,7 @@ function is_logged() {
     return isset($_SESSION['islogged']) ? $_SESSION['islogged'] : false;
 }
 
-/*
- * -------------------------------------------------------------------
+/* -------------------------------------------------------------------
  *  FRONT CONTROLLER
  * -------------------------------------------------------------------
  */
@@ -559,11 +551,18 @@ function front_ctrl() {
     //Read the PATH INFO to divide the request in segments
     //The first one will be used as the controller
     //we need to use the request_uri instead of pathinfo when mod_rewrite is on
+    /*
     if (isset($_SERVER['PATH_INFO'])) {
         $uri = $_SERVER['PATH_INFO'];
+        debug('pathinfo='.$uri);
     } else if (isset($_SERVER['REQUEST_URI'])) {
         $uri = str_replace(dirname($_SERVER['SCRIPT_NAME']),'',$_SERVER['REQUEST_URI']);
-    }
+        debug('requri='.$uri);
+    }*/
+
+    //not sure if it works all the time
+    $uri = str_replace(dirname($_SERVER['SCRIPT_NAME']),'',$_SERVER['REQUEST_URI']);
+    $uri = str_replace(cfg('base_index'), '', ltrim($uri,'/'));
 
     /*
      * This interferes with the file upload
@@ -598,14 +597,12 @@ function front_ctrl() {
 
  //this is maybe a bit too much.. why not leave it to the user to edit the file
 //to change the username and password?
-
-        //check if php version ok
+//@todo the config should move to the index.html
+//   //check if php version ok
         //check if folder are writable
 function loadConfig() {
     global $cfg;
-    /**
-     * These are core settings, merged with config.php
-     */
+
     $cfg = array (
         'cache_images'    => true,
         //default controller
@@ -654,7 +651,7 @@ function loadConfig() {
             if (in_array("mod_rewrite", apache_get_modules()) && file_exists('.htaccess')) {
                 $cfg['base_index'] = "";
             } else {
-                $cfg['base_index'] = "index.php/";
+                $cfg['base_index'] = "index.php?/";
             }
         }
     } else {
@@ -691,6 +688,7 @@ function loadConfig() {
 
 include 'app/lib/phpconsole/PhpConsole.php';
 PhpConsole::start();
+
 
 //Launches the front controlller if this file is not an include
 // = broken (doesn't resolve docroot properly)

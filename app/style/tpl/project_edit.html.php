@@ -1,4 +1,4 @@
-<?php output('_header.html.php',$output); ?>
+<?output('_header.html.php',$output)?>
 
     <?=includeCSS("uEditor.css");?>
     <?=includeCSS("fileuploader.css");?>
@@ -6,22 +6,30 @@
     <!-- custom javascript -->
     <?=includeJS("fileuploader.js");?>
     <?=includeJS("uEditor.js");?>
+    <?=includeJS("jquery.dropp.js");?>
     <?=includeJS("admin_project_edit.js");?>
 
     <script type="text/javascript" >
         var project_name = '<?=$project->name?>';
+        var editorCSSUrl = '<?=includeCSS('editor_style.css',false)?>';
     </script>
 
-<?output('_menu.html.php',$output);?>
+<?output('_menu.html.php',$output)?>
     <div class="top-fixed" >
     <div class="pad" >
     
     <input type="text" id="project_title" value="<?=$project->title?>" >
 
-
-
+    <div class="left template-select" >
+    <select id="template">
+    <?php foreach($templates as $template): ?>
+        <option value="<?=$template?>" <?php if($project->template==$template) echo 'selected' ?> ><?=$template?></option>
+    <?php endforeach; ?>
+    </select>
+    </div>
+    
     <div class="buttons" >
-    <a href="#" class="button status-" id="status" ></a>
+    <a href="#" class="button status-<?=$project->status?>" id="status" ><?=$project->status?></a>
     <a href="#" class="button" id="saveproject" >save</a>
     </div>
     
@@ -31,8 +39,6 @@
     <div class="pad" >
 
     <textarea id="project_text" name="project_text" ><?=$project->presentation?></textarea>
-   
-    
     
     <div id="gallery_container" >
         
@@ -84,5 +90,4 @@
 
     </div>
 
-
-<?php output('_footer.html.php',$output); ?>
+<?output('_footer.html.php',$output)?>
