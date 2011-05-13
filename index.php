@@ -9,6 +9,7 @@
  *  @author Nicolas Myers
  *  @copyright Copyright (c) 2011 Nicolas Myers
  *  @license http://opensource.org/licenses/mit-license.php The MIT License
+ *
  */
 
 /* -------------------------------------------------------------------
@@ -28,6 +29,7 @@ function config() {
     $cfg['tpl_dir']         = "tpl/";
     $cfg['js_dir']          = "js/";
     $cfg['css_dir']         = "css/";
+    $cfg['theme']           = "default/";
 
     if (file_exists($cfg['admin_dir'].'config/config.php')) {
         include $cfg['admin_dir'].'config/config.php';
@@ -45,6 +47,7 @@ function config() {
     } else {
         die('no config found! please install.');
     }
+    
 }
 
 function cfg($key) {
@@ -86,7 +89,8 @@ function router() {
         if (!empty($item)) $first = false;
     }
     $query = rtrim($query,'/');
-    print_r($routes);
+    print_r($_GET);
+    die();
     $call_function = 'default';
     foreach ($routes as $pattern => $function) {
         if (preg_match($pattern, $query, $matches)) {
@@ -204,17 +208,9 @@ function projects() {
     return $projects;
 }
 
-
-/* -------------------------------------------------------------------
- *  CONTROLLERS
- * -------------------------------------------------------------------
- */
-
-dispatch('/showproject/*/','ctrl_project_view');
-function ctrl_project_view() {
-    print_r(projects()->getProject(param(1)));
+function include_lib($filename) {
+    require_once cfg('lib_dir').$filename;
 }
-
 
 /* -------------------------------------------------------------------
  *  START
@@ -223,12 +219,19 @@ function ctrl_project_view() {
 
 function run() {
     session_start();
-
-    include 'app/lib/phpconsole/PhpConsole.php';
-    PhpConsole::start();
     
     config();
+    
+    include cfg('admin_dir').'controllers.php';
+    include cfg('lib_dir').'/phpconsole/PhpConsole.php';
+
+    PhpConsole::start();
+
+
     router();
 }
 
-run();
+//run();
+
+
+print_r($_SERVER);
