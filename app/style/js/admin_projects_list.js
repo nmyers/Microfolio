@@ -1,8 +1,6 @@
 /* 
  * admin_project_list.js
  *
- *
- *
  */
 
 $(function() {
@@ -10,43 +8,21 @@ $(function() {
     createSortable();
     addControls();
 
-    /*
-     * --------------------------------------------------------------------
-     * BUTTONS
-     * --------------------------------------------------------------------
-     */
-
-    $('#newproject').click(function() {
+    $('a[href=#newproject]').click(function() {
         newProject();
         return false;
     })
-
-    $("#addsection").click(function(){
-        if (newTitle = prompt("Section title:")) {
-            newSection = '<li><div class="section status-offline" ><a>'+newTitle+"</a></div></li>\n";
-            $("#projects").append(newSection);
-            addControls();
-        }
-        return false;
-    })
-
-    $("#savechanges").click(function(){
-        saveList();
-        return false;
-    })
-
+    
 })
-
 
 /**
  * Makes the list sortable
  * using nested sortable
  *
  * @see http://mjsarfatti.com/sandbox/nestedSortable/
- *
  */
 function createSortable() {
-    $('#projects').addClass('sortable');
+    $('#projects_root').addClass('sortable');
     $('ol.sortable').nestedSortable({
         forcePlaceholderSize: true,
         handle: 'div',
@@ -57,69 +33,92 @@ function createSortable() {
         tabSize: 25,
         tolerance: 'pointer',
         toleranceElement: '> div',
-        update: saveList
+        update: saveOrder
     });
 }
 
-/**
- * Adds a new project to the list
- * -> Ajax call
- *
- */
-function newProject() {
-    if(project_name = prompt("New project name:")) {
-        showMessage('3#Adding new project...');
-        $.post(base_url+base_index+"admin_projects_list_save/",{
-            ajax: true,
-            listhtml: $("#projects").html()
-        },function(message) {
-            if (message.charAt(1)=='#' && message.charAt(0)=='1') {
-                $.post(base_url+base_index+"admin_project_create/"+project_name,{
-                    ajax: true
-                },function(message){
-                    showMessage(message);
-                    //reload list
-                    $('#list-holder').load(base_url+base_index+'admin_projects_list #projects',
-                    function(){
-                        createSortable();
-                        addControls();
-                    });
-                })
+function reloadList(successCallback) {
+    showMessage('Reloading list...',MESSAGE_LOADING);
+    $('#list-holder').load(makeUrl('admin/projects')+' #projects_root',
+        function(){
+            createSortable();
+            addControls();
+            if (typeof successCallback === 'function') {
+                successCallback();
             }
         })
-    }
 }
 
 /**
  * Saves the list
  * -> ajax call
- *
  */
-function saveList() {
-    //show message
-    showMessage('3#Saving projects list...');
-    $.post(base_url+base_index+"admin_projects_list_save/",{
+function saveOrder(successCallback) {
+    showMessage('Saving projects list...',MESSAGE_LOADING);
+    $.post(makeUrl('admin/projects/reorder'),{
         ajax: true,
-        listhtml: $("#projects").html()
-    },function(message){
-        showMessage(message);
-        if (message.charAt(1)=='#' && message.charAt(0)=='1') {
-            addControls();
+        neworder: $('ol.sortable').nestedSortable('serialize')
+    },function(json){
+        var data = jQuery.parseJSON(json);
+        showMessage(data.message,data.message_type);
+        if (typeof successCallback === 'function') {
+            successCallback();
         }
     })
+}
+
+function saveStatus(project_slug,new_status,successCallback) {
+    showMessage('Saving project\'s status...',MESSAGE_LOADING);
+    $.post(makeUrl('admin/projects/status'),{
+        ajax: true,
+        project_slug: project_slug,
+        new_status: new_status
+    },function(json){
+        var data = jQuery.parseJSON(json);
+        showMessage(data.message,data.message_type);
+        if (typeof successCallback === 'function') {
+            successCallback();
+        }
+    })
+}
+
+/**
+ * Adds a new project to the list
+ * -> Ajax call
+ */
+function newProject() {
+    if(project_title = prompt("New project title:")) {
+        saveOrder(function () {
+            showMessage('Adding new project...',MESSAGE_LOADING);
+            $.post(makeUrl("admin/projects/create/"),{
+                ajax: true,
+                project_title: project_title
+            },function(json){
+                var data = jQuery.parseJSON(json);
+                showMessage(data.message,data.message_type);
+                if (data.message_type!=MESSAGE_ERROR)
+                    reloadList();
+            })
+        })
+    }
 }
 
 /**
  * Deletes a project
  * @todo needs a proper confirm box!
  * -> ajax call
- *
  */
-function deleteProject(project_name) {
-    showMessage('3#Deleting project...');
-    $.post(base_url+base_index+"admin_project_delete/"+project_name,{
+function deleteProject(project_slug,successCallback) {
+    showMessage('Deleting project...',MESSAGE_LOADING);
+    $.post(makeUrl('admin/projects/delete/'+project_slug),{
         ajax: true
-    },showMessage)
+    },function(json){
+        var data = jQuery.parseJSON(json);
+        showMessage(data.message,data.message_type);
+        if (typeof successCallback === 'function') {
+            successCallback();
+        }
+    })
 }
 
 /**
@@ -128,100 +127,69 @@ function deleteProject(project_name) {
  */
 function addControls() {
 
-    /**
-     *  Adds controls to each project and section
-     *  rename / edit / delete / publish / hide
-     */
-    $("#projects .controls").remove();
-    controls  = "<a href='#' class='button2 bt-rename' >rename</a>";
-    controls += "<a href='#' class='button2 bt-edit' >edit</a>";
-    controls += "<a href='#' class='button2 bt-delete' >delete</a>";
-    controls += "<a href='#' class='button bt-status' >offline</a>";
-    $("#projects div").append("<div class='controls' >"+controls+"</div>");
-
-    // Removes publish and edit if it's a section
-    $("#projects div.section .bt-publish").remove();
-    $("#projects div.section .bt-edit").remove();
-
+    $("#projects_root .controls").remove();
+    controls  = "<a href='#rename' class='button2' >rename</a>";
+    controls += "<a href='#edit'   class='button2' >edit</a>";
+    controls += "<a href='#delete' class='button2' >delete</a>";
+    controls += "<a href='#status' class='button bt-status' >offline</a>";
+    $("#projects_root div").append("<div class='controls' >"+controls+"</div>");
 
     /**
      * Rename an element
-     * !!! > this will not rename the project but just the link's text.
-     *
-     */
+     * @todo
+     */    
     $(".controls .bt-rename").click(function(){
-        firstElem = $(this).parent().prev();
-        if (newTitle = prompt("New item title:",firstElem.text())) {
-            firstElem.text(newTitle);
-            saveList();
-        }
         return false;
     })
-
 
     /**
      * Delete a section or a project
      * this removes a level of hierarchy if needed
-     * @todo needs to be tested properly
      */
-    $(".controls .bt-delete").click(function(){
+    $(".controls a[href=#delete]").click(function(){
         parentDiv = $(this).parent().parent();
-        if (parentDiv.hasClass("project")) {
-            href = $(this).parent().prev().attr("href");
-            href = href.substring(0,href.indexOf('/'));
-            deleteProject(href);
-        }
-        //drops a level
-        parentLi = parentDiv.parent();
-        $("div",parentLi).eq(0).remove();
-        $("ol",parentLi).eq(0).replaceWith($("ol",parentLi).eq(0).html());
-        parentLi = parentLi.replaceWith(parentLi.html());
-        saveList();
+        href = $(this).parent().prev().attr("href");
+        href = href.substring(0,href.indexOf('/'));
+        deleteProject(parentDiv.data('slug'),function(){
+            //drops a level
+            parentLi = parentDiv.parent();
+            $("div",parentLi).eq(0).remove();
+            $("ol",parentLi).eq(0).replaceWith($("ol",parentLi).eq(0).html());
+            parentLi = parentLi.replaceWith(parentLi.html());
+            saveOrder(function(){
+                showMessage("Project deleted.",MESSAGE_SUCCESS);
+            });
+        });
         return false;
     })
 
     /**
-     * Go and edit the project
-     * Rewrites the link
+     * Edit
      */
-    $(".controls .bt-edit").click(function(){
-        parentDiv = $(this).parent().parent();
-        if (parentDiv.hasClass("project")) {
-            href = $(this).parent().prev().attr("href");
-            project_name = href.substring(0,href.indexOf('/'));
-            window.location = base_url+base_index+"admin_project_edit/"+project_name;
-        }
+    $(".controls a[href=#edit]").click(function(){
+        parentDiv = $(this).parent().parent().children('a').first();
+        window.location = parentDiv.attr('href');
         return false;
     })
 
     /**
-     * Toggle status
+     * Status
      */
-    $(".controls .bt-status").each(function(){
-        parentDiv = $(this).parent().parent();
-        if (parentDiv.hasClass('status-hidden')) $(this).addClass('status-hidden').text('hidden');
-        if (parentDiv.hasClass('status-offline')) $(this).addClass('status-offline').text('offline');
-        if (parentDiv.hasClass('status-online')) $(this).addClass('status-online').text('online');
+    $(".controls a[href=#status]").each(function(){
+        status = $(this).parent().parent().data('status');
+        $(this).addClass('status-'+status).text(status);
     })
 
-    $(".controls .bt-status").click(function(){
-        parentDiv = $(this).parent().parent();
-        if (parentDiv.hasClass('status-offline')) {
-            oldClass = 'status-offline';
-            newClass = 'status-online';
-            newText  = 'online';
-        } else if(parentDiv.hasClass('status-online')) {
-            oldClass = 'status-online';
-            newClass = 'status-hidden';
-            newText  = 'hidden';
-        } else if(parentDiv.hasClass('status-hidden')) {
-            oldClass = 'status-hidden';
-            newClass = 'status-offline';
-            newText  = 'offline';
-        }
-        parentDiv.removeClass(oldClass).addClass(newClass);
-        $(this).removeClass(oldClass).addClass(newClass).text(newText);
-        saveList();
-        return false;
+    $(".controls a[href=#status]").click(function(){
+        status = $(this).parent().parent().data('status');
+        list_status = new Array('offline','online','hidden');
+        new_status = list_status[(list_status.indexOf(status)+1) % list_status.length];
+        project_slug = $(this).parent().parent().data('slug');
+        var scope = $(this);
+        saveStatus(project_slug, new_status, function() {
+            scope.parent().parent().data('status',new_status);
+            scope.removeClass('status-'+status).addClass('status-'+new_status).text(new_status);
+            return false;
+        })
     })
 }

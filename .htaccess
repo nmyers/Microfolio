@@ -11,7 +11,7 @@
   # test string is a valid directory
   RewriteCond %{SCRIPT_FILENAME} !-d
 
-  RewriteRule ^(.*)$   index.php?/$1    [NC,L,QSA]
+  RewriteRule ^(.*)$   index.php?q=$1    [NC,L,QSA]
   # with QSA flag (query string append),
   # forces the rewrite engine to append a query string part of the
   # substitution string to the existing string, instead of replacing it.

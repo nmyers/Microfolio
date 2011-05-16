@@ -29,6 +29,11 @@ $(document).ready(function () {
  * 2#Information message
  * 3#Loading message
  */
+var MESSAGE_ERROR   = 0;
+var MESSAGE_SUCCESS = 1;
+var MESSAGE_INFO    = 2;
+var MESSAGE_LOADING = 3;
+
 function showMessage(message,style,delay) {
 
     delay = typeof(delay) != 'number' ? 3000 : delay;
@@ -38,7 +43,7 @@ function showMessage(message,style,delay) {
         style = message.charAt(0);
         message = message.substr(2);
     }
-    if(style==3) delay = 10000; //
+    if (style==3) delay = 10000;
 
     style = 'style-'+style;
     
@@ -49,6 +54,10 @@ function showMessage(message,style,delay) {
 
 function updateIframe(src) {
     $('#mainFrame').attr('src',src);
+}
+
+function makeUrl(uri) {
+    return base_url+base_index+uri;
 }
 
 $.fn.outer = function(val){

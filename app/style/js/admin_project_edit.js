@@ -6,6 +6,7 @@
 
 
 $(function() {
+    
     createSortable();
     createUploader();
     addControls();
@@ -25,26 +26,6 @@ $(function() {
         return false;
     })
 
-    $("a#status").click(function(){
-        if ($(this).hasClass('status-offline')) {
-            oldClass = 'status-offline';
-            newClass = 'status-online';
-            newText  = 'online';
-        } else if($(this).hasClass('status-online')) {
-            oldClass = 'status-online';
-            newClass = 'status-hidden';
-            newText  = 'hidden';
-        } else if($(this).hasClass('status-hidden')) {
-            oldClass = 'status-hidden';
-            newClass = 'status-offline';
-            newText  = 'offline';
-        }
-        $(this).removeClass(oldClass).addClass(newClass).text(newText);
-        saveProject();
-        return false;
-    })
-
-    $('#template').dropp();
 })
 
 function initWysiwyg() {
@@ -76,8 +57,8 @@ function addEmbed() {
  * edit / delete
  */
 function addControls() {
-    $( "#gallery .media .controls" ).remove();
-    $( "#gallery .media" ).prepend("<div class='controls' ><a href='#' class='edit' >edit</a><a href='#' class= 'delete' >delete</a></div>");
+    $( "#gallery .item .controls" ).remove();
+    $( "#gallery .item" ).prepend("<div class='controls' ><a href='#' class='edit' >edit</a><a href='#' class= 'delete' >delete</a></div>");
 
     /**
      * Edit caption
@@ -108,7 +89,7 @@ function addControls() {
 function createUploader() {
     var uploader = new qq.FileUploader({
         element: document.getElementById('file-uploader'),
-        action: base_url+base_index+"admin_project_media_upload/"+project_name+"/",
+        action: base_url+base_index+"admin_project_media_upload/"+project_slug+"/",
         allowedExtensions: ['jpg','jpeg'],
         onComplete: function(id, fileName, responseJSON){
             $(".qq-upload-list LI").eq(id).hide();
@@ -137,12 +118,12 @@ function createSortable() {
  * Reloads the gallery/thumbnails using an ajax call
  */
 function reloadGallery() {
-    $('#gallery_content').load(base_url+base_index+'admin_project_edit/'+project_name+' #gallery_content',
+    $('#gallery_content').load(base_url+base_index+'admin_project_edit/'+project_slug+' #gallery_content',
         function(){
             createSortable();
             addControls();
         });
-        updateIframe(base_url+base_index+'project/'+project_name)
+        updateIframe(base_url+base_index+'project/'+project_slug)
 }
 
 /**
@@ -153,7 +134,7 @@ function saveProject() {
     var editor = $('#project_text').data('editor');
     editor.updateuEditorInput();
     
-    $.post(base_url+base_index+"admin_project_save/"+project_name,{
+    $.post(base_url+base_index+"admin_project_save/"+project_slug,{
         ajax: true,
         title: $("#project_title").attr("value"),
         presentation:  $("#project_text").val(),
@@ -237,9 +218,9 @@ function editMedia(media_div) {
  * Deletes a media -> ajax
  */
 function deleteMedia(media_file) {
-    $.post(base_url+base_index+"admin_project_media_delete/"+project_name+'/'+media_file,{
+    $.post(base_url+base_index+"admin_project_media_delete/"+project_slug+'/'+media_file,{
         ajax: true,
-        project_name: project_name,
+        project_slug: project_slug,
         media_file: media_file
     },function(message) {
         if (message.charAt(1)=='#' && message.charAt(0)=='1') {

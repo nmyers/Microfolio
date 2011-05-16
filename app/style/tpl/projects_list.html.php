@@ -5,14 +5,11 @@
     <?=includeJS("jquery.ui.nestedSortable.js");?>
     <?=includeJS("admin_projects_list.js");?>
     
-<?output('_menu.html.php',$output);?>
+<?output('_header2.html.php',$output);?>
     <div class="pad" >
-        <a href="#" id="newproject"  class="button">new project</a>
-        <a href="#" id="addsection"  class="button">add section</a>
+        <a href="#newproject" class="button">add new project</a>
         <div id="list-holder" >
-            <ol id="projects" >
-            <?=$projects->list?>
-            </ol>
+            <?=projects()->getMenu()?>
         </div>
     </div>
 <?output('_footer.html.php',$output);?>

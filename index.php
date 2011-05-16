@@ -17,6 +17,11 @@
  * -------------------------------------------------------------------
  */
 
+define("MESSAGE_ERROR",    0);
+define("MESSAGE_SUCCESS",  1);
+define("MESSAGE_INFO",     2);
+define("MESSAGE_LOADING",  3);
+
 function config() {
     global $cfg;
     
@@ -66,10 +71,11 @@ $routes = array();
 function dispatch($pattern,$function,$regex=false) {
     global $routes;
     if (!$regex) {
-        $pattern = rtrim($pattern,'/');
+        $pattern = trim($pattern,'/');
         $pattern = '/^'.str_replace('/','\/',$pattern).'$/i';
-        $pattern = str_replace('**', '([\w\/]+)', $pattern);
-        $pattern = str_replace('*', '([^\/]+)', $pattern);
+        $pattern = str_replace('?','\?',$pattern);
+        $pattern = str_replace('**', '(.+)', $pattern);
+        $pattern = str_replace('*', '([^\/\?]+)', $pattern);
     }
     $routes[$pattern] = $function;
 }
@@ -81,23 +87,16 @@ function param($i) {
 
 function router() {
     global $routes,$params;
-    $query = '';
-    $first = true;
-    foreach ($_GET as $key => $item) {
-        if (!empty($item)) $query .= $first ? '?' : '&';
-        $query .= empty($item) ? $key : $key.'='.$item;
-        if (!empty($item)) $first = false;
-    }
-    $query = rtrim($query,'/');
-    print_r($_GET);
-    die();
-    $call_function = 'default';
+    $query = rtrim(str_replace('q=','', $_SERVER['QUERY_STRING']),'/');
+    //QUERY STRING replace the first ? by &, this corrects it:
+    if (strpos($_SERVER['REQUEST_URI'], '?q=')===false && strpos($query,'&')!==false) $query{strpos($query,'&')}='?';
     foreach ($routes as $pattern => $function) {
         if (preg_match($pattern, $query, $matches)) {
             $call_function = $function;
             $params = $matches;
         }
     }
+    if (!isset($call_function)) die('<br>not found '.$query);
     call_user_func($call_function);
 }
 
@@ -121,6 +120,13 @@ function logout() {
 
 function is_logged() {
     return isset($_SESSION['islogged']) ? $_SESSION['islogged'] : false;
+}
+
+//Check credentials
+function in_admin() {
+    if (!is_logged()) redirect('login');
+    global $cfg;
+    $cfg['in_admin'] = true;
 }
 
 /*
@@ -164,7 +170,7 @@ function output($tpl, $contentArray=array(), $returnToString=FALSE) {
 }
 
 function makeUrl($action) {
-    return cfg('base_url') . cfg('base_index') . $action;
+    return cfg('base_url') . cfg('base_index') . trim($action,'/');
 }
 
 function redirect($action="") {
@@ -194,6 +200,7 @@ function includeCSS($filename,$tag=true) {
     }
 }
 
+
 /* -------------------------------------------------------------------
  *  HELPERS
  * -------------------------------------------------------------------
@@ -202,7 +209,7 @@ function includeCSS($filename,$tag=true) {
 function projects() {
     global $projects;
     if (!isset($projects)) {
-        include 'app/model-n.php';
+        include 'app/models.php';
         $projects = Projects::singleton();
     }
     return $projects;
@@ -210,6 +217,13 @@ function projects() {
 
 function include_lib($filename) {
     require_once cfg('lib_dir').$filename;
+}
+
+function getPost($key,$sanitize=true) {
+    if (!isset($_POST[$key])) return null;
+    $val = stripslashes($_POST[$key]);
+    if ($sanitize)  $val = filter_var($val, FILTER_SANITIZE_STRING);
+    return $val;
 }
 
 /* -------------------------------------------------------------------
@@ -231,7 +245,4 @@ function run() {
     router();
 }
 
-//run();
-
-
-print_r($_SERVER);
+run();

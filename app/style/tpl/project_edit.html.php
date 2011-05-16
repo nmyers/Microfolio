@@ -6,31 +6,35 @@
     <!-- custom javascript -->
     <?=includeJS("fileuploader.js");?>
     <?=includeJS("uEditor.js");?>
-    <?=includeJS("jquery.dropp.js");?>
     <?=includeJS("admin_project_edit.js");?>
 
     <script type="text/javascript" >
-        var project_name = '<?=$project->name?>';
+        var project_slug = '<?=$project->slug?>';
         var editorCSSUrl = '<?=includeCSS('editor_style.css',false)?>';
     </script>
 
-<?output('_menu.html.php',$output)?>
+<?output('_header2.html.php',$output)?>
+    
     <div class="top-fixed" >
     <div class="pad" >
     
     <input type="text" id="project_title" value="<?=$project->title?>" >
-
-    <div class="left template-select" >
-    <select id="template">
-    <?php foreach($templates as $template): ?>
-        <option value="<?=$template?>" <?php if($project->template==$template) echo 'selected' ?> ><?=$template?></option>
-    <?php endforeach; ?>
-    </select>
-    </div>
+    <div id="slug" ><?=makeUrl('project/'.$project->slug)?></div>
+    
     
     <div class="buttons" >
-    <a href="#" class="button status-<?=$project->status?>" id="status" ><?=$project->status?></a>
-    <a href="#" class="button" id="saveproject" >save</a>
+        <a href="#" class="button" id="saveproject" >save</a>
+
+        <a href="#" class="button status-<?=$project->status?>" id="status" ><?=$project->status?></a>
+
+        <div class="template-select button" >
+            <select id="template">
+            <?php foreach($templates as $template): ?>
+                <option value="<?=$template?>" <?php if($project->style==$template) echo 'selected' ?> ><?=$template?></option>
+            <?php endforeach; ?>
+            </select>
+        </div>
+       
     </div>
     
     </div>
@@ -38,7 +42,7 @@
 
     <div class="pad" >
 
-    <textarea id="project_text" name="project_text" ><?=$project->presentation?></textarea>
+    <textarea id="project_text" name="project_text" ><?=$project->text?></textarea>
     
     <div id="gallery_container" >
         
@@ -49,7 +53,11 @@
 
         <div id="gallery_content" >
             <div id="gallery" >
-                <?=$project->gallery?>
+                <? foreach ($project as $key => $item): ?>
+                    <div class="item" >
+                    <?=$item->render('t72x72')?>
+                    </div>
+                <? endforeach; ?>
             </div>
         </div>
 
