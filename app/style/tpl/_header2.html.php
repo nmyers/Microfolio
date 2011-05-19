@@ -1,12 +1,7 @@
-
     <title>Microfolio :: <?=$admin_title?></title>
 </head>
-
-
-<iframe id="mainFrame" name="mainFrame" class="ui-layout-center"
-	width="800" height="600" frameborder="0" scrolling="auto"
-	src=""></iframe>
-
+<iframe id="mainFrame" name="mainFrame" class="ui-layout-center" frameborder="0" scrolling="auto" src="">
+</iframe>
 <div class="ui-layout-west">
 <div id="design" >&nbsp;</div>
 <div id="header" >

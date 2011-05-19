@@ -7,7 +7,7 @@
             "status":"offline",
             "timestamp":1304781352,
             "parent":"root",
-            "style":"template b",
+            "style":"template a",
             "text":"<h1>PHP F1<\/h1><h3>Help in PHP, get PHP code, scripts,&nbsp;<br \/>tutorials<\/h3><p>help<\/p><p>please!!<\/p><h3>Help in PHP, get PHP code, scripts,&nbsp;<br \/>tutorials<\/h3><p>help<\/p><p>please!!<\/p><h3>Help in PHP, get PHP code, scripts,&nbsp;<br \/>tutorials<\/h3><p>help<\/p><p>please!!<\/p>",
             "gallery":{
                 "item_4dd3e8715dda1":{
@@ -15,6 +15,12 @@
                     "title":"robot playing violin",
                     "caption":"sad no?",
                     "src":"http:\/\/www.youtube.com\/watch?v=EzjkBwZtxp4"
+                },
+                "item_4dd4fbb1e61af":{
+                    "type":"embed",
+                    "title":"piou",
+                    "caption":"piou pilou!!\n<br>\nkipoulet",
+                    "src":"http:\/\/www.youtube.com\/watch?v=G5d3A-SV9Vo"
                 },
                 "item_4dcacbdc7e3fb":{
                     "type":"image",
@@ -105,12 +111,6 @@
                     "title":null,
                     "caption":null,
                     "src":"5208446453_177dcbd826_b_2.jpg"
-                },
-                "item_4dd4fbb1e61af":{
-                    "type":"embed",
-                    "title":"piou",
-                    "caption":"piou pilou!!\n<br>\nkipoulet",
-                    "src":"http:\/\/www.youtube.com\/watch?v=G5d3A-SV9Vo"
                 }
             }
         },
@@ -120,8 +120,8 @@
             "status":"online",
             "timestamp":1305826378,
             "parent":"tete-de-chien",
-            "style":"default",
-            "text":null,
+            "style":"template a",
+            "text":"Bonjhor<a href=\"http:\/\/www.gogoo.le\">sdasdas<\/a><br \/>asdasdas<br \/>",
             "gallery":{
                 "item_4dd5547266902":{
                     "type":"image",
@@ -184,8 +184,8 @@
                 }
             }
         },
-        "test2":{
-            "slug":"test2",
+        "testjoki":{
+            "slug":"testjoki",
             "title":"project title",
             "status":"offline",
             "timestamp":1304781352,
@@ -211,6 +211,12 @@
                     "caption":null,
                     "src":"stargazerscboldt02.jpg"
                 },
+                "item_4dd56729945a5":{
+                    "type":"embed",
+                    "title":"kokikok",
+                    "caption":"pokoij]hgjhgjhgjhg\njhgjhgjhg",
+                    "src":"http:\/\/www.youtube.com\/watch?v=G5d3A-SV9Vo"
+                },
                 "item_4dcacbdc7ebd4":{
                     "type":"image",
                     "title":null,
@@ -229,12 +235,6 @@
                     "caption":null,
                     "src":"stargazerscboldt11.jpg"
                 },
-                "item_4dcacbdc7f1a3":{
-                    "type":"image",
-                    "title":null,
-                    "caption":null,
-                    "src":"stargazerscboldt1153.jpg"
-                },
                 "item_4dcacbdc7f204":{
                     "type":"image",
                     "title":null,
@@ -246,6 +246,12 @@
                     "title":null,
                     "caption":null,
                     "src":"stargazerscboldt12142.jpg"
+                },
+                "item_4dd566e4bfa32":{
+                    "type":"image",
+                    "title":null,
+                    "caption":null,
+                    "src":"5208446453_177dcbd826_b.jpg"
                 }
             }
         }
