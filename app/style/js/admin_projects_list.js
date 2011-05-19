@@ -55,6 +55,7 @@ function reloadList(successCallback) {
  */
 function saveOrder(successCallback) {
     showMessage('Saving projects list...',MESSAGE_LOADING);
+    alert($('ol.sortable').nestedSortable('serialize'));
     $.post(makeUrl('admin/projects/reorder'),{
         ajax: true,
         neworder: $('ol.sortable').nestedSortable('serialize')

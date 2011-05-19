@@ -3,8 +3,6 @@
  * 
  */
 
-
-
 $(function() {
     
     createSortable();
@@ -13,142 +11,146 @@ $(function() {
     initWysiwyg();
 
     $("#edit_media_dialog").hide();
-    /**
-     * Buttons
-     */
-    $('#saveproject').click(function() {
+
+    $('a[href=#saveproject]').click(function() {
         saveProject();
         return false;
     })
 
-     $('#addembed').click(function() {
+     $('a[href=#addembed]').click(function() {
         addEmbed();
         return false;
     })
 
+    $('a[href=#editslug]').click(function() {
+        alert('not ready yet');
+        return false;
+    })
+
+    $("#status").click(function(){
+        status = $(this).data('status');
+        list_status = new Array('offline','online','hidden');
+        new_status = list_status[(list_status.indexOf(status)+1) % list_status.length];
+        var scope = $(this);
+        saveStatus(new_status, function() {
+            scope.data('status',new_status);
+            scope.removeClass('status-'+status).addClass('status-'+new_status).text(new_status);
+            return false;
+        })
+    })
+
+    $('#template').dropp();
+
 })
 
 function initWysiwyg() {
-
     $('#project_text').uEditor({
             toolbarItems : ['bold','italic','link','h1','h2','h3','p','htmlsource'],
             containerClass : 'uEditor',
             stylesheet : editorCSSUrl
     });
-    
 }
 
-function addEmbed() {
-    //add html and go to edit
-    html  = '<div class="media embed">';
-    html += '   <a href="" class="embed" title="" >';
-    html += '      EMBED';
-    html += '   </a>';
-    html += '   <div class="caption">';
-    html += '  </div>';
-    html += '</div>';
-    $("#gallery").prepend(html);
-    addControls();
-    editMedia($("#gallery .media:eq(0)"));
-}
-
-/**
- * Adds buttons to thumbnails
- * edit / delete
- */
 function addControls() {
     $( "#gallery .item .controls" ).remove();
-    $( "#gallery .item" ).prepend("<div class='controls' ><a href='#' class='edit' >edit</a><a href='#' class= 'delete' >delete</a></div>");
+    $( "#gallery .item" ).prepend("<div class='controls' ><a href='#edit' >edit</a><a href='#delete' >delete</a></div>");
 
-    /**
-     * Edit caption
-     */
-    $( "#gallery .media a.edit" ).click(function(){
+    $( "#gallery .item a[href=#edit]" ).click(function(){
         editMedia($(this).parent().parent());
         return false;
     })
 
-    /**
-     * Delete media
-     */
-    $( "#gallery .media a.delete" ).click(function(){
+    $( "#gallery .item a[href=#delete]" ).click(function(){
         if(window.confirm('Are you sure?')) {
-        var src = $('a.image',$(this).parent().parent()).attr('href');
-        var filename = src.substring(src.lastIndexOf('/')+1);
-        deleteMedia(filename);
-        return false;
+            var scope = $(this).parent().parent();
+            deleteItem($(this).parent().parent().attr('id'),function() {
+                scope.remove();
+            });
+            return false;
         }
     })
 }
 
-/**
- * Initialize ajax uploader
- * @see http://github.com/valums/file-uploader
- * @todo wrap the call to the main index.php for consistency
- */
 function createUploader() {
-    var uploader = new qq.FileUploader({
-        element: document.getElementById('file-uploader'),
-        action: base_url+base_index+"admin_project_media_upload/"+project_slug+"/",
-        allowedExtensions: ['jpg','jpeg'],
-        onComplete: function(id, fileName, responseJSON){
-            $(".qq-upload-list LI").eq(id).hide();
-            if($(".qq-upload-list LI:visible").size()==0) {
-                reloadGallery();
+    //"admin/projects/"+project_slug+"/uploaditem",
+    //$("a[href=#fileupload]")
+    $("#upload_field").html5_upload({
+        url: makeUrl("admin/projects/"+project_slug+"/uploaditem"),
+        sendBoundary: window.FormData || $.browser.mozilla,
+        onStart: function(event, total, files) {
+            $('#gallery_container .toolbar').after('<ol id="uploadqueue" ></ol>');
+            for (i=0;i<total;i++) {
+                $('#uploadqueue').append('<li id="queue_'+i+'" >'+files[i].fileName+'<div class="progress_holder" ><div class="progress"></div></div></li>');
+                $("#queue_"+i).fadeTo(0,0.6);
             }
-
-            //
-            //$(".qq-upload-list").delay(1000).text("");
+            return true;
+        },
+        onStartOne: function(event, name, number, total) {
+            $("#queue_"+number).fadeTo(0,1);
+            return true;
+        },
+        onProgress: function(event, progress, name, number, total) {
+            $("#queue_"+number+" .progress_holder .progress").css('width', Math.ceil(progress*100)+"%");
+	},
+        onFinish: function(event, response, name, number, total) {
+            $('#uploadqueue').fadeTo(500,0.1).delay(500).remove();
+            reloadGallery();
         }
     });
 }
 
-/**
- * Initialise the sortable thumbnails
- */
 function createSortable() {
     $( "#gallery" ).sortable({
        update: function(event, ui) {
-            saveProject();
+            saveOrder();
         }
     });
 }
 
-/**
- * Reloads the gallery/thumbnails using an ajax call
- */
 function reloadGallery() {
-    $('#gallery_content').load(base_url+base_index+'admin_project_edit/'+project_slug+' #gallery_content',
+    $('#gallery_content').load(makeUrl('admin/projects/'+project_slug+' #gallery_content'),
         function(){
             createSortable();
             addControls();
         });
-        updateIframe(base_url+base_index+'project/'+project_slug)
+        //updateIframe(base_url+base_index+'project/'+project_slug)
 }
 
-/**
- * Saves the project -> ajax
- */
-function saveProject() {
-    //fetch the wysiwyg editor object to update the textarea
-    var editor = $('#project_text').data('editor');
-    editor.updateuEditorInput();
-    
-    $.post(base_url+base_index+"admin_project_save/"+project_slug,{
+function saveOrder(successCallback) {
+    showMessage('Saving gallery order...',MESSAGE_LOADING);
+    $.post(makeUrl('admin/projects/'+project_slug+'/reorder'),{
         ajax: true,
-        title: $("#project_title").attr("value"),
-        presentation:  $("#project_text").val(),
-        gallery: $("#gallery").html(),
-        template: $("#template").val(),
-        status: $("#status").text()
-    },function(message) {
-        if (message.charAt(1)=='#' && message.charAt(0)=='1') {
-            reloadGallery();
-            showMessage(message);
-        } else {
-            showMessage(message);
+        neworder: $( "#gallery" ).sortable('serialize')
+    },function(json){
+        var data = jQuery.parseJSON(json);
+        showMessage(data.message,data.message_type);
+        if (typeof successCallback === 'function') {
+            successCallback();
         }
     })
+}
+
+function saveProject() {
+//saves textarea content, title and template
+}
+
+function saveStatus(new_status,successCallback) {
+    showMessage('Saving project\'s status...',MESSAGE_LOADING);
+    $.post(makeUrl('admin/projects/status'),{
+        ajax: true,
+        project_slug: project_slug,
+        new_status: new_status
+    },function(json){
+        var data = jQuery.parseJSON(json);
+        showMessage(data.message,data.message_type);
+        if (typeof successCallback === 'function') {
+            successCallback();
+        }
+    })
+}
+
+function changeProjectSlug() {
+    
 }
 
 function editMedia(media_div) {
@@ -157,77 +159,132 @@ function editMedia(media_div) {
     $("#edit_media_dialog").show();
 
     //unbind click events
-    $("#edit_media_controls .save").unbind('click');
-    $("#edit_media_controls .cancel").unbind('click');
+    $("#edit_media_controls a[href=#save]").unbind('click');
+    $("#edit_media_controls a[href=#cancel]").unbind('click');
 
     //populate the form
-
+    type = media_div.data('type');
+    src = media_div.data('src');
+    item_uid = media_div.attr('id');
+    
     //if it's an image
-    if (media_div.hasClass('image')) {
+    if (type=='image') {
         $("#edit_image_form").show();
         $("#edit_embed_form").hide();
 
-        //populate the form
-        $("#edit_image_form img").attr("src",$("img",media_div).attr("src").replace("/2/72/72/5/","/0/"));
-        $("#image_title").val($(".controls",media_div).next('a').attr("title"));
-        $("#image_caption").val($(".caption",media_div).text().replace(/[ \t]+/g," ").replace(/(\n )+/g,"\n")); //need to remove extra spaces added by html syntax
-
-        //buttons
-        $("#edit_media_controls .save").click(function(){
-            $("img",media_div).attr("alt",$("#image_title").val());
-            $(".controls",media_div).next('a').attr("title",$("#image_title").val());
-            $(".caption",media_div).text($("#image_caption").val());
-            $("#gallery_content").show();
-            $("#edit_media_dialog").hide();
-            saveProject();
-        })
+        $("#edit_image_form img").attr("src",makeUrl('image/full/'+project_slug+'/'+src));
+        $("#image_title").val($("img",media_div).attr("alt"));
+        $("#image_caption").val($(".caption",media_div).html());
     }
 
-    if (media_div.hasClass('embed')) {
+    if (type=='embed') {
         $("#edit_image_form").hide();
         $("#edit_embed_form").show();
 
-        //populate the form
-        $("#edit_embed_form .preview").html($("a.embed",media_div).outer());
-        $('#edit_embed_form .preview').load(base_url+base_index+'admin_preview_embed/'+escape($("a.embed",media_div).attr("href")));
+        $("#edit_embed_form .preview").oembed(media_div.data("src"),{embedMethod: "fill",afterEmbed:function(){
+                $("#edit_embed_form .preview *").attr('width', '100%').attr('height','100%');
+        }} );
 
-        $("#embed_url").val($("a.embed",media_div).attr("href"));
-        $("#embed_title").val($("a.embed",media_div).attr("title"));
-        $("#embed_caption").val($(".caption",media_div).text().replace(/[ \t]+/g," ").replace(/(\n )+/g,"\n"));
-
-        //buttons
-        $("#edit_media_controls .save").click(function(){
-            $("a.embed",media_div).attr("href",$("#embed_url").val());
-            $("a.embed",media_div).attr("title",$("#embed_title").val());
-            $(".caption",media_div).text($("#embed_caption").val());
-
-            $("#gallery_content").show();
-            $("#edit_media_dialog").hide();
-            saveProject();
-        })
+        $('#embed_url').blur(function() {
+            $("#edit_embed_form .preview").oembed($("#embed_url").val(),{embedMethod: "fill",afterEmbed:function(){
+                $("#edit_embed_form .preview *").attr('width', '100%').attr('height','100%');
+            }} );
+        });
+        $("#embed_url").val(media_div.data("src"));
+        $("#embed_title").val($("img",media_div).attr("alt"));
+        $("#embed_caption").val($(".caption",media_div).html());
     }
 
-    //cancel button
-    $("#edit_media_controls .cancel").click(function(){
+    $("#edit_media_controls a[href=#save]").click(function(){
+        $("#gallery_content").show();
+        $("#edit_media_dialog").hide();
+        var data = new Object();
+        data.uid = item_uid;
+        data.src = type=='embed' ? $("#embed_url").val() : '';
+        data.title = $("#"+type+"_title").val();
+        data.caption = $("#"+type+"_caption").val();
+        data.type = type;
+        saveItemDetails(data,function() {
+                reloadGallery();
+            });
+    })
+
+    $("#edit_media_controls a[href=#cancel]").click(function(){
         $("#gallery_content").show();
         $("#edit_media_dialog").hide();
     })
 }
 
-/**
- * Deletes a media -> ajax
- */
-function deleteMedia(media_file) {
-    $.post(base_url+base_index+"admin_project_media_delete/"+project_slug+'/'+media_file,{
+function addEmbed() {
+
+        $("#gallery_content").hide();
+        $("#edit_media_dialog").show();
+        $("#edit_image_form").hide();
+        $("#edit_embed_form").show();
+
+        //unbind click events
+        $("#edit_media_controls a[href=#save]").unbind('click');
+        $("#edit_media_controls a[href=#cancel]").unbind('click');
+
+        $("#edit_embed_form .preview").html('');
+
+        $('#embed_url').blur(function() {
+            $("#edit_embed_form .preview").oembed($("#embed_url").val(),{embedMethod: "fill",afterEmbed:function(){
+                $("#edit_embed_form .preview *").attr('width', '100%').attr('height','100%');
+            }} );
+        });
+        $("#embed_url").val("http://");
+        $("#image_title").val("");
+        $("#image_caption").val("");
+
+        $("#edit_media_controls a[href=#save]").click(function(){
+            $("#gallery_content").show();
+            $("#edit_media_dialog").hide();
+            var data = new Object();
+            data.uid = 'new';
+            data.src = $("#embed_url").val();
+            data.title = $("#embed_title").val();
+            data.caption = $("#embed_caption").val();
+            data.type = 'embed';
+            saveItemDetails(data,function() {
+                reloadGallery();
+            });
+        });
+
+        $("#edit_media_controls a[href=#cancel]").click(function(){
+            $("#gallery_content").show();
+            $("#edit_media_dialog").hide();
+        })
+}
+
+function saveItemDetails(data,successCallback) {
+    showMessage('Updating item...',MESSAGE_LOADING);
+    $.post(makeUrl('admin/projects/'+project_slug+'/updateitem'),{
         ajax: true,
-        project_slug: project_slug,
-        media_file: media_file
-    },function(message) {
-        if (message.charAt(1)=='#' && message.charAt(0)=='1') {
-            reloadGallery();
-            showMessage(message);
-        } else {
-            showMessage(message);
+        uid: data.uid,
+        title: data.title,
+        src: data.src,
+        caption: data.caption,
+        type: data.type
+    },function(json){
+        var data = jQuery.parseJSON(json);
+        showMessage(data.message,data.message_type);
+        if (typeof successCallback === 'function') {
+            successCallback();
+        }
+    })
+}
+
+function deleteItem(item_id,successCallback) {
+    showMessage('Deleting item...',MESSAGE_LOADING);
+    $.post(makeUrl('admin/projects/'+project_slug+'/deleteitem'),{
+        ajax: true,
+        itemid: item_id
+    },function(json){
+        var data = jQuery.parseJSON(json);
+        showMessage(data.message,data.message_type);
+        if (typeof successCallback === 'function') {
+            successCallback();
         }
     })
 }
