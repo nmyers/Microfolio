@@ -168,7 +168,13 @@ class Projects implements Iterator {
     }
 
     public function rename($oldProjectSlug,$newProjectSlug) {
-        //todo
+        $newProjectSlug = normalize_str($newProjectSlug);
+        if (!rename(Projects::$folder.$oldProjectSlug,Projects::$folder.$newProjectSlug))
+                throw new Exception("Can't rename folder '$oldProjectSlug' in '$newProjectSlug'");
+        $this->projects[$oldProjectSlug]->slug = $newProjectSlug;
+        $this->projects[$newProjectSlug] = $this->projects[$oldProjectSlug];
+        unset($this->projects[$oldProjectSlug]);
+        return $this->projects[$newProjectSlug];
     }
 
     /**
@@ -445,7 +451,7 @@ class GalleryItem {
 function getEmbedCode($url,$preview=false) {
 
     //youtube
-    $pattern = '/^http:\/\/(?:www\.)?youtube.com\/watch\?(?=.*v=(\w+))(?:\S+)?$/i';
+    $pattern = '/^http:\/\/(?:www\.)?youtube.com\/watch\?(?=.*v=([\w-]+))(?:\S+)?$/i';
     if (preg_match($pattern, $url, $matches))
     if ($preview) {
         return 'http://img.youtube.com/vi/'.$matches[1].'/0.jpg';

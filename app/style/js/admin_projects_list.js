@@ -55,7 +55,6 @@ function reloadList(successCallback) {
  */
 function saveOrder(successCallback) {
     showMessage('Saving projects list...',MESSAGE_LOADING);
-    alert($('ol.sortable').nestedSortable('serialize'));
     $.post(makeUrl('admin/projects/reorder'),{
         ajax: true,
         neworder: $('ol.sortable').nestedSortable('serialize')
@@ -70,9 +69,8 @@ function saveOrder(successCallback) {
 
 function saveStatus(project_slug,new_status,successCallback) {
     showMessage('Saving project\'s status...',MESSAGE_LOADING);
-    $.post(makeUrl('admin/projects/status'),{
+    $.post(makeUrl('admin/projects/'+project_slug+'/status'),{
         ajax: true,
-        project_slug: project_slug,
         new_status: new_status
     },function(json){
         var data = jQuery.parseJSON(json);
@@ -111,7 +109,7 @@ function newProject() {
  */
 function deleteProject(project_slug,successCallback) {
     showMessage('Deleting project...',MESSAGE_LOADING);
-    $.post(makeUrl('admin/projects/delete/'+project_slug),{
+    $.post(makeUrl('admin/projects/'+project_slug+'/delete'),{
         ajax: true
     },function(json){
         var data = jQuery.parseJSON(json);

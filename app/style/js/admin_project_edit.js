@@ -23,7 +23,9 @@ $(function() {
     })
 
     $('a[href=#editslug]').click(function() {
-        alert('not ready yet');
+        if(new_project_slug = prompt("New project uri:",project_slug)) {
+            changeProjectSlug(new_project_slug);
+        }
         return false;
     })
 
@@ -130,15 +132,44 @@ function saveOrder(successCallback) {
     })
 }
 
-function saveProject() {
-//saves textarea content, title and template
+function saveProject(successCallback) {
+    //saves textarea content, title and template
+    showMessage('Saving project...',MESSAGE_LOADING);
+    var editor = $('#project_text').data('editor');
+    editor.updateuEditorInput();
+    $.post(makeUrl('admin/projects/'+project_slug+'/update'),{
+        ajax: true,
+        title: $("#project_title").val(),
+        text: $("#project_text").val(),
+        template: $('#template option:selected').val()
+    },function(json){
+        var data = jQuery.parseJSON(json);
+        showMessage(data.message,data.message_type);
+        if (typeof successCallback === 'function') {
+            successCallback();
+        }
+    })
+}
+
+function changeProjectSlug(new_project_slug,successCallback) {
+    showMessage('Saving project...',MESSAGE_LOADING);
+    var editor = $('#project_text').data('editor');
+    editor.updateuEditorInput();
+    $.post(makeUrl('admin/projects/'+project_slug+'/rename/'+new_project_slug),{
+        ajax: true
+    },function(json){
+        var data = jQuery.parseJSON(json);
+        showMessage(data.message,data.message_type);
+        if (data.message_type!=MESSAGE_ERROR) {
+            window.location = makeUrl('admin/projects/'+data.new_project_slug);
+        }
+    })
 }
 
 function saveStatus(new_status,successCallback) {
     showMessage('Saving project\'s status...',MESSAGE_LOADING);
-    $.post(makeUrl('admin/projects/status'),{
+    $.post(makeUrl('admin/projects/'+project_slug+'/status'),{
         ajax: true,
-        project_slug: project_slug,
         new_status: new_status
     },function(json){
         var data = jQuery.parseJSON(json);
@@ -149,9 +180,6 @@ function saveStatus(new_status,successCallback) {
     })
 }
 
-function changeProjectSlug() {
-    
-}
 
 function editMedia(media_div) {
     //hide the gallery and show the dialog
@@ -234,8 +262,8 @@ function addEmbed() {
             }} );
         });
         $("#embed_url").val("http://");
-        $("#image_title").val("");
-        $("#image_caption").val("");
+        $("#embed_title").val("");
+        $("#embed_caption").val("");
 
         $("#edit_media_controls a[href=#save]").click(function(){
             $("#gallery_content").show();

@@ -38,16 +38,12 @@ function config() {
 
     if (file_exists($cfg['admin_dir'].'config/config.php')) {
         include $cfg['admin_dir'].'config/config.php';
-        //cleanup theme
+        $cfg = array_merge($cfg,$config);
         $cfg['theme'] = rtrim($cfg['theme'],'/').'/';
         // @see: http://codeigniter.com/forums/viewthread/81424/
-        if (!isset($cfg['base_url'])) {
+        if (empty($cfg['base_url'])) {
             $cfg['base_url']  = "http://" . $_SERVER['HTTP_HOST'];
             $cfg['base_url'] .= str_replace(basename($_SERVER['SCRIPT_NAME']), "", $_SERVER['SCRIPT_NAME']);
-        }
-        if (!isset($cfg['base_dir'])) {
-            $cfg['base_dir'] = realpath('.').'/';
-            $cfg['base_dir'] = str_replace("\\","/",rtrim($cfg['base_dir'], '/').'/');
         }
     } else {
         die('no config found! please install.');
@@ -59,7 +55,6 @@ function cfg($key) {
     global $cfg;
     return isset($cfg[$key]) ? $cfg[$key] : NULL;
 }
-
 
 /* -------------------------------------------------------------------
  *  ROUTING FUNCTIONS
@@ -200,6 +195,14 @@ function includeCSS($filename,$tag=true) {
     }
 }
 
+function warnings() {
+    $html = '';
+    if (!is_writable(cfg('admin_dir').'config/config.php'))
+        $html.= "<div class='warning' ><span>Warning: your config file is not writable!</span></div>\n";
+    if (!is_writable(cfg('projects_dir')))
+        $html.= "<div class='warning' ><span>Warning: your content folder is not writable!</span></div>\n";
+    return $html;
+}
 
 /* -------------------------------------------------------------------
  *  HELPERS

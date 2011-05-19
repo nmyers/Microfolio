@@ -1,22 +1,14 @@
 <?php 
+// Configuration file 
 
-/* --------------------------------------------------------------------
- * Configuration
- * --------------------------------------------------------------------
- */
 
-$cfg['username']        = 'admin';
+$config['website_title'] = 'Microfolio test it please!'; 
 
-$cfg['password']        = 'e3274be5c857fb42ab72d786e281b4b8';
+$config['username'] = 'admin'; 
 
-$cfg['default_ctrl']    = 'index';
+$config['password'] = '7488e331b8b64e5794da3fa4eb10ad5d'; 
 
-//$cfg['base_url']      = "http://localhost/microfolio";
+$config['base_url'] = ''; 
 
-//$cfg['base_dir']      = "/microfolio/";
+$config['allowed_tags'] = '<p><h1><h2><h3><em><strong><a><br>'; 
 
-$cfg['cache_images']    = true;
-
-$cfg['image_quality']   = 90;
-
-$cfg['allowed_tags']    = '<p><h1><h2><h3><em><strong><a><br>';

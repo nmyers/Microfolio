@@ -7,7 +7,6 @@
     
     <script type="text/javascript" >
         var base_url   = '<?=cfg('base_url')?>';
-        var base_dir   = '<?=cfg('base_dir')?>';
         var base_index = '<?=cfg('base_index')?>';
         var lib_dir    = '<?=cfg('lib_dir')?>';
     </script>

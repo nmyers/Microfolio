@@ -53,9 +53,73 @@ function ctrl_logout() {
  * -------------------------------------------------------------------
  */
 
+dispatch('admin/settings', 'ctrl_admin_settings');
+function ctrl_admin_settings() {
+    in_admin();
+
+    $is_writable_settings = is_writable(cfg('admin_dir').'config/config.php');
+    $is_writable_content  = is_writable(cfg('projects_dir'));
+
+
+    include cfg('admin_dir').'config/config.php';
+
+    if(getPost('posted')!=null) {
+
+        if (getPost('username')=="") {
+            $json['message'] = "Username cannot be left empty";
+            $json['message_type'] = MESSAGE_ERROR;
+            die(json_encode($json));
+        }
+
+        if (getPost('password')!=null) {
+            if (getPost('password')!=getPost('confirm_password')) {
+                $json['message'] = "Passwords don't match!";
+                $json['message_type'] = MESSAGE_ERROR;
+                die(json_encode($json));
+            }
+            if (strlen(getPost('password'))<5) {
+                $json['message'] = "Password too short! >5 characters";
+                $json['message_type'] = MESSAGE_ERROR;
+                die(json_encode($json));
+            }
+            //password should be ok at this point
+            $_POST['password'] = md5(getPost('username') . getPost('password'));
+        }
+        
+        $code = "<?php \n// Configuration file \n\n\n";
+        foreach ($config as $key => $value) {
+            if (getPost($key)!=null) {
+                $code .= "\$config['$key'] = '".getPost($key)."'; \n\n";
+            } else {
+                $code .= "\$config['$key'] = '".$value."'; \n\n";
+            }
+        }
+        if (!file_put_contents(cfg('admin_dir').'config/config.php', $code)) {
+            //error writing the file
+            $json['message'] = "Error writing the config file.";
+            $json['message_type'] = MESSAGE_ERROR;
+            die(json_encode($json));
+        }
+        $json['message'] = "Config saved.";
+        $json['message_type'] = MESSAGE_SUCCESS;
+        die(json_encode($json));
+    }
+
+    $offset = 3;
+    $config = array_slice($config, 0, $offset, true) +
+              array('confirm_password' => '') +
+              array_slice($config, $offset, NULL, true);
+    $config['password'] = '';
+    $output['config'] = $config;
+    $output['admin_title'] = 'Projects list';
+    output("settings_edit.html.php", $output);
+}
+
+
 dispatch('admin/projects', 'ctrl_admin_projects');
 function ctrl_admin_projects() {
     in_admin();
+    projects()->sync();
     $output['admin_title'] = 'Projects list';
     output("projects_list.html.php", $output);
 }
@@ -87,14 +151,14 @@ function ctrl_admin_projects_reorder() {
     echo json_encode($json);
 }
 
-dispatch('admin/projects/status', 'ctrl_admin_project_status');
+dispatch('admin/projects/*/status', 'ctrl_admin_project_status');
 function ctrl_admin_project_status() {
     in_admin();
     try {
         $allowed_status = array ('offline','online','hidden');
         if (!in_array(getPost('new_status'), $allowed_status))
                 throw new Exception("Status '".getPost('new_status')."' is not allowed.");
-        projects()->get(getPost('project_slug'))->status = getPost('new_status');
+        projects()->get(param(1))->status = getPost('new_status');
         projects()->save();
         $json['message'] = "Project's status udpated.";
         $json['message_type'] = MESSAGE_SUCCESS;
@@ -105,7 +169,7 @@ function ctrl_admin_project_status() {
     echo json_encode($json);
 }
 
-dispatch('admin/projects/delete/*', 'ctrl_admin_project_delete');
+dispatch('admin/projects/*/delete', 'ctrl_admin_project_delete');
 function ctrl_admin_project_delete() {
     in_admin();
     try {
@@ -119,6 +183,41 @@ function ctrl_admin_project_delete() {
     }
     echo json_encode($json);
 }
+
+dispatch('admin/projects/*/update', 'ctrl_admin_project_update');
+function ctrl_admin_project_update() {
+    in_admin();
+    try {
+        $project = projects()->get(param(1));
+        $project->title = strip_tags(getPost('title'));
+        $project->text = strip_tags(getPost('text',false),cfg('allowed_tags'));
+        $project->style = getPost('template');
+        projects()->save();
+        $json['message'] = "Project updated.";
+        $json['message_type'] = MESSAGE_SUCCESS;
+    } catch (Exception $e) {
+        $json['message'] = $e->getMessage();
+        $json['message_type'] = MESSAGE_ERROR;
+    }
+    echo json_encode($json);
+}
+
+dispatch('admin/projects/*/rename/*', 'ctrl_admin_project_rename');
+function ctrl_admin_project_rename() {
+    in_admin();
+    try {
+        $project = projects()->rename(param(1),param(2));
+        projects()->save();
+        $json['new_project_slug'] = $project->slug;
+        $json['message'] = "Project renamed.";
+        $json['message_type'] = MESSAGE_SUCCESS;
+    } catch (Exception $e) {
+        $json['message'] = $e->getMessage();
+        $json['message_type'] = MESSAGE_ERROR;
+    }
+    echo json_encode($json);
+}
+
 
 dispatch('admin/projects/create', 'ctrl_admin_project_create');
 function ctrl_admin_project_create() {

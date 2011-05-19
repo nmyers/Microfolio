@@ -21,11 +21,14 @@
         <div class="right" >
             <ul id="menu">
                 
-                <li><a href="<?=makeUrl('admin_settings');?>" >Settings</a></li>
+                <li><a href="<?=makeUrl('admin/settings');?>" >Settings</a></li>
                 <li><a href="<?=makeUrl('admin/help');?>" >Help</a></li>
                 <li class="last" ><a href="<?=makeUrl('logout');?>" >Logout</a></li>
             </ul>
         </div>
     </div>
+</div>
+<div class="warnings" >
+    <?=warnings();?>
 </div>
 <div id="main" >

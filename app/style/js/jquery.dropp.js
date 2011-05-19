@@ -51,7 +51,7 @@
 				list_width -= (parseInt(list.css('borderLeftWidth'), 10) + parseInt(list.css('borderRightWidth'), 10));
 			}
 			
-			list.css('min-width', list_width);
+			//list.css('min-width', list_width);
 			
 			list.css('position', 'absolute').css('z-index', '9999');
 			

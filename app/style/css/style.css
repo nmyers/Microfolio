@@ -93,9 +93,15 @@ BODY
 {
 	background-color: #F0F0F0;
 }
-INPUT
+INPUT, TEXTAREA
 {
 	border: 1px solid #AAAAAA;
+	outline: none;
+}
+INPUT:focus, TEXTAREA:focus
+{
+	border: 1px solid #0EB0C0;
+	outline: none;
 }
 LABEL
 {
@@ -166,18 +172,22 @@ A.button.status-hidden
 /*dropdown*/
 A.dropdown
 {
-	background: #666;
+	background: #666 url(dropdown.gif) no-repeat center right;
 	color: #FFF;
 	text-decoration: none;
 	text-transform: uppercase;
-	padding: 5px 8px;
+	padding: 5px 23px 5px 8px; /*[e]5px 8px+15px 5px 8px*/
 	/*+border-radius:5px;*/
 	-moz-border-radius: 5px;
 	-webkit-border-radius: 5px;
 	-khtml-border-radius: 5px;
 	border-radius: 5px 5px 5px 5px;
-	height: 15px;
+	height: 12px;
+	line-height: 12px;
 	margin: 0;
+	display: block;
+	width: 140px;
+	overflow: hidden;
 }
 .dropdown_list
 {
@@ -185,20 +195,21 @@ A.dropdown
 	color: #FFF;
 	text-decoration: none;
 	text-transform: uppercase;
-	padding: 5px 8px 0px;
-	/*+border-radius:5px;*/
-	-moz-border-radius: 5px;
-	-webkit-border-radius: 5px;
-	-khtml-border-radius: 5px;
-	border-radius: 5px 5px 5px 5px;
-	margin-top: -18px;
+	padding: 3px 23px 3px 8px; /*[e]3px 8px+15px 3px 8px*/
+	/*+border-radius:0px 0px 5px 5px;*/
+	-moz-border-radius: 0px 0px 5px 5px;
+	-webkit-border-radius: 0px 0px 5px 5px;
+	-khtml-border-radius: 0px 0px 5px 5px;
+	border-radius: 0px 0px 5px 5px;
+	width: 140px;
+	line-height: 12px;
+	margin-top: -5px;
 }
 .dropdown_list LI
 {
 	list-style: none;
+	line-height: 16px;
 	height: 17px;
-	margin-top: -2px;
-	margin-bottom: 2px;
 }
 .dropdown_list A
 {
@@ -208,7 +219,7 @@ A.dropdown
 }
 .dropdown_list A:hover
 {
-	background: #444;
+	text-decoration: underline;
 }
 /*MESSAGE*/
 #message
@@ -240,6 +251,20 @@ A.dropdown
 #message.style-2
 {
 	background: #0EB0C0;
+}
+.warning
+{
+	background: #ED1C34;
+	color: #FFFFFF;
+	text-transform: uppercase;
+	width: 100%;
+	font-size: 100%;
+	padding: 3px 0;
+	margin-top: 1px;
+}
+.warning SPAN
+{
+	margin-left: 8px;
 }
 /*HEADER*/
 #header
@@ -323,16 +348,16 @@ OL.sortable, OL.sortable OL
 }
 OL.sortable
 {
-	margin: 4em 0;
+	margin: 0 0 4em;
 }
 OL.sortable LI
 {
-	margin: 7px 0 0;
+	margin: 4px 0 0;
 	padding: 0;
 }
 OL.sortable LI DIV
 {
-	border: 1px solid #000000;
+	border: 1px solid #999999;
 	padding: 3px;
 	margin: 0;
 	cursor: move;
@@ -441,7 +466,7 @@ INPUT#project_title
 	width: 50%;
 	height: 36px;
 	text-align: right;
-	margin-top: -11px;
+	margin-top: -18px;
 	/*+placement:float-right 1px 0px;*/
 	float: right;
 	position: relative;
@@ -456,7 +481,7 @@ INPUT#project_title
 	position: relative;
 	left: 2px;
 	top: -3px;
-	color: #2F2F2F;
+	color: #5A5A5A;
 	font-size: 110%;
 }
 .top-fixed #slug A
@@ -464,18 +489,30 @@ INPUT#project_title
 	text-decoration: none;
 	color: #000000;
 	font-weight: normal;
-	margin-left: 2px;
+	padding-right: 2px;
 }
 .top-fixed #slug A:hover
 {
 	color: #FFFFFF;
 }
+.top-fixed #slug A EM
+{
+	text-decoration: underline;
+}
+.top-fixed #slug A:hover SPAN
+{
+	color: #000000;
+}
+.top-fixed #slug A:hover EM
+{
+	text-decoration: none;
+}
 .template-select
 {
-	/*+placement:shift 0px 4px;*/
+	/*+placement:shift 0px 0px;*/
 	position: relative;
 	left: 0px;
-	top: 4px;
+	top: 0px;
 }
 .uploadbutton INPUT
 {
@@ -588,7 +625,6 @@ INPUT#project_title
 	padding: 0 2px;
 	border-color: #AAAAAA;
 }
-/*OLD STUFF*/
 #gallery
 {
 	padding: 7px 6px 21px 10px;
@@ -600,6 +636,15 @@ INPUT#project_title
 	width: 72px;
 	height: 72px;
 	text-align: center;
+}
+.item IMG
+{
+	border: 1px solid #BBBBBB;
+	cursor: move;
+}
+.item:hover IMG
+{
+	border: 1px solid #444444;
 }
 .item .controls
 {
@@ -615,6 +660,52 @@ INPUT#project_title
 .item .caption
 {
 	display: none;
+}
+/*SETTINGS*/
+.savesettings
+{
+	/*+placement:shift 8px 0px;*/
+	position: relative;
+	left: 8px;
+	top: 0px;
+}
+#list-settings
+{
+	border-top: 1px solid #BBBBBB;
+	margin-top: 10px;
+	margin-bottom: 10px;
+}
+.setting
+{
+	border-bottom: 1px solid #BBBBBB;
+	clear: both;
+	padding: 10px 8px;
+	height: 20px;
+}
+.setting LABEL
+{
+	font-size: 110%;
+	/*+placement:float-left 0px 0px;*/
+	float: left;
+	position: relative;
+	left: 0px;
+	top: 0px;
+	width: 140px;
+}
+.setting INPUT
+{
+	width: 342px;
+	height: 18px;
+	font-size: 110%;
+	/*+placement:float-left 0px 0px;*/
+	float: left;
+	position: relative;
+	left: 0px;
+	top: 0px;
+}
+.settings-top
+{
+	margin-top: 9px;
 }
 /*PANES*/
 .ui-layout-pane-center

@@ -18,8 +18,7 @@
 
 <div class="top-fixed" >
     <div class="pad" >
-        <div id="slug" ><?= makeUrl('project/' . $project->slug) ?>
-            <a href="#editslug" >[ edit ]</a>
+        <div id="slug" ><?= makeUrl('project/') ?>/<a href="#editslug" ><span><?=$project->slug?></span> &larr; <em>edit url</em></a>
         </div>
         <div id="title_section">
             <div class="pad" >
