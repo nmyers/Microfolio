@@ -1,38 +1,20 @@
-<?php
-/*
-$project->set_thumbnails(1,200);
-$project->set_images(0);
-*/
-?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-<head>
-    <!-- metas -->
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-
-    <!-- css -->
-    <?=includeCSS("style.css")?>
-
-    <title><?=$project->title?></title>
-</head>
-    <body>
-    <div id="menu">
-        <?=$menu?> Simple
-    </div>
-    <div id="project">
-
-        <h1 id="title" ><?=$project->title?></h1>
-
-        <div id="presentation" >
-            <?=$project->presentation?>
-        </div><!-- end of presentation text -->
-
-        <div id="gallery" >
-            <?=$project->gallery?>
-        </div><!-- end of gallery -->
-
-
-    </div><!-- end of project -->
-
-    </body>
-</html>
+<?output('_header.html.php',$output);?>
+<table>
+    <tr>
+        <td>
+            <div class="intro" >
+                <h1 id="title" ><?=$project->title?></h1>
+                <div id="presentation" >
+                    <?=$project->text?>
+                </div>
+            </div>
+        </td>
+        <? foreach($project as $item): ?>
+        <td>
+            <?=$item->render()?>
+            <div class="caption" ><?=$item->caption?></div>
+        </td>
+        <? endforeach; ?>
+    </tr>
+</table>
+<?output('_footer.html.php',$output);?>

@@ -42,6 +42,7 @@ $(function() {
     })
 
     $('#template').dropp();
+    updateIframe(makeUrl('project/'+project_slug));
 
 })
 
@@ -71,6 +72,12 @@ function addControls() {
             return false;
         }
     })
+
+    $("#gallery .item").dblclick(function() {
+        //alert($(this).attr('id'));
+        $("#gallery .item").removeClass('project-thumbnail');
+        $(this).addClass('project-thumbnail');
+    });
 }
 
 function createUploader() {
@@ -126,6 +133,7 @@ function saveOrder(successCallback) {
     },function(json){
         var data = jQuery.parseJSON(json);
         showMessage(data.message,data.message_type);
+        updateIframe(makeUrl('project/'+project_slug));
         if (typeof successCallback === 'function') {
             successCallback();
         }
@@ -145,6 +153,7 @@ function saveProject(successCallback) {
     },function(json){
         var data = jQuery.parseJSON(json);
         showMessage(data.message,data.message_type);
+        updateIframe(makeUrl('project/'+project_slug));
         if (typeof successCallback === 'function') {
             successCallback();
         }
@@ -297,6 +306,7 @@ function saveItemDetails(data,successCallback) {
     },function(json){
         var data = jQuery.parseJSON(json);
         showMessage(data.message,data.message_type);
+        updateIframe(makeUrl('project/'+project_slug));
         if (typeof successCallback === 'function') {
             successCallback();
         }
@@ -311,6 +321,7 @@ function deleteItem(item_id,successCallback) {
     },function(json){
         var data = jQuery.parseJSON(json);
         showMessage(data.message,data.message_type);
+        updateIframe(makeUrl('project/'+project_slug));
         if (typeof successCallback === 'function') {
             successCallback();
         }

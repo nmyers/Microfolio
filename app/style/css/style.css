@@ -646,6 +646,10 @@ INPUT#project_title
 {
 	border: 1px solid #444444;
 }
+.item.project-thumbnail IMG
+{
+	border: 1px solid #ED1C34;
+}
 .item .controls
 {
 	display: block;

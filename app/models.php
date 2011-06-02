@@ -92,10 +92,15 @@ class Projects implements Iterator {
      * @param boolean $filter Removes hidden and offline projects if set to true
      */
     public function getMenu($filter=true,$level='root') {
-        $html = "<ol id='projects_$level'>\n";
+        if ($level=='root') {
+           $html = "<ol id='menu' >\n";
+        } else {
+           $html = "<ol id='projects_$level'>\n";
+        }
         foreach ($this->projects as $key => $project) {
-            if ($project->parent == $level) {
-                $html .= "<li id=\"menu_".$project->slug."\" ><div data-status=\"".$project->status."\" data-slug=\"".$project->slug."\" ><a href=\"".  makeUrl('admin/projects/'.$project->slug)."\" >".$project->title."</a></div>\n";
+            $is_visible = ($project->status==Project::PROJECT_ONLINE) || (!$filter);
+            if (($project->parent == $level) && ($is_visible)) {
+                $html .= "<li id=\"menu_".$project->slug."\" ><div data-status=\"".$project->status."\" data-slug=\"".$project->slug."\" ><a href=\"".  makeUrl('project/'.$project->slug)."\" >".$project->title."</a></div>\n";
                 $html .= $this->getMenu($filter,$key);
                 $html .= "</li>\n";
             }
@@ -169,14 +174,34 @@ class Projects implements Iterator {
 
     public function rename($oldProjectSlug,$newProjectSlug) {
         $newProjectSlug = normalize_str($newProjectSlug);
+
+        //check if it's a valid new slug
+        if (isset ($this->projects[$newProjectSlug])) {
+            throw new Exception("Cannot rename, '$newProjectSlug' already exists.");
+        }
+
         if (!rename(Projects::$folder.$oldProjectSlug,Projects::$folder.$newProjectSlug))
                 throw new Exception("Can't rename folder '$oldProjectSlug' in '$newProjectSlug'");
         $this->projects[$oldProjectSlug]->slug = $newProjectSlug;
-        $this->projects[$newProjectSlug] = $this->projects[$oldProjectSlug];
-        unset($this->projects[$oldProjectSlug]);
+
+        //replace with new key at the same position
+        $offset = array_search($oldProjectSlug,array_keys($this->projects));
+        if ($offset!==false) {
+            $this->projects = array_slice($this->projects, 0, $offset, true) +
+                      array($newProjectSlug => $this->projects[$oldProjectSlug]) +
+                      array_slice($this->projects, $offset+1, NULL, true);
+        }
+
+        //rename all the "parents" value
+        foreach($this->projects as $key => $project) {
+            if ($project->parent==$oldProjectSlug)
+                    $project->parent = $newProjectSlug;
+        }
+
         return $this->projects[$newProjectSlug];
     }
 
+    
     /**
      * Converts this object to JSON
      */
@@ -234,6 +259,8 @@ class Project implements Iterator {
     public $parent;
     public $style;
     public $text;
+
+    public $thumbnail_uid;
 
     public $gallery;
 
@@ -330,6 +357,22 @@ class Project implements Iterator {
         return $has_changed;
     }
 
+    public function render() {
+        $html = '<div class="gallery project-'.$this->slug.'" >'."\n\n";
+        if (!empty($this->gallery)) {
+            foreach ($this->gallery as $key => $item){
+                $html .= sprintf('<div class="item type-%s" title="%s" >',$item->type,$item->title);
+                $html .= "\n".$item->render()."\n";
+                $html .= sprintf('<div class="title" >%s</div>',$item->title)."\n";
+                $html .= sprintf('<div class="caption" >%s</div>',$item->caption)."\n";
+                $html .= "</div>\n\n";
+            }
+        }
+        $html .= "</div><!-- end of gallery -->\n";
+        return $html;
+    }
+
+
     public function getItem($uid) {
         if (isset($this->gallery[$uid]))
             return $this->gallery[$uid];
@@ -358,6 +401,7 @@ class Project implements Iterator {
         }
         throw new Exception("Cannot find item '$uid'.");
     }
+
 
     //------------------------
     // ITERATOR METHODS
@@ -456,7 +500,7 @@ function getEmbedCode($url,$preview=false) {
     if ($preview) {
         return 'http://img.youtube.com/vi/'.$matches[1].'/0.jpg';
     } else {
-        return '<div class="embed" ><iframe title="YouTube video player" width="100%" height="100%" src="http://www.youtube.com/embed/'.$matches[1].'?rel=0" frameborder="0" allowfullscreen></iframe></div>';
+        return '<div class="embed" ><iframe title="YouTube video player" src="http://www.youtube.com/embed/'.$matches[1].'?rel=0" frameborder="0" allowfullscreen></iframe></div>';
     }
 
     //vimeo
@@ -466,7 +510,7 @@ function getEmbedCode($url,$preview=false) {
         $hash = unserialize(file_get_contents("http://vimeo.com/api/v2/video/".$matches[3].".php"));
         return $hash[0]['thumbnail_large'];
     } else {
-        return'<div class="embed" ><iframe src="http://player.vimeo.com/video/'.$matches[3].'?title=0&amp;byline=0&amp;portrait=0&amp;color=00adef" width="100%" height="100%" frameborder="0"></iframe></div>';
+        return'<div class="embed" ><iframe src="http://player.vimeo.com/video/'.$matches[3].'?title=0&amp;byline=0&amp;portrait=0&amp;color=00adef" frameborder="0"></iframe></div>';
     }
 
     return false;

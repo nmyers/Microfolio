@@ -5,14 +5,40 @@
  * -------------------------------------------------------------------
  */
 
-dispatch('/project/*','ctrl_project_view');
+dispatch('**','ctrl_notfound');
+function ctrl_notfound() {
+   die('page not found :'.param(1));
+}
+
+dispatch('','ctrl_default');
+function ctrl_default() {
+   redirect(cfg('default_uri'));
+}
+
+dispatch('project/*', 'ctrl_project_view');
 function ctrl_project_view() {
-    print_r(projects()->getProject(param(1)));
+    try {
+        $project = projects()->get(param(1));
+        //check if online
+        if ((!is_logged ()) && ($project->status==Project::PROJECT_OFFLINE)) {
+            //no access
+            die('page not found :'.param(1));
+        }
+        $output['project'] = $project;
+        $output['menu'] = projects()->getMenu();
+        try {
+            output("project_".$project->style.".html.php",$output);
+        } catch (Exception $e) {
+            output("project_default.html.php",$output);
+        }
+    } catch (Exception $e) {
+        echo $e->getMessage();
+    }
 }
 
 dispatch('project/*?edit','ctrl_project_editurl');
 function ctrl_project_editurl() {
-    echo 'edit > '.param(1);
+    ctrl_admin_project_edit();
 }
 
 dispatch('image/*/*/**', 'ctrl_process_image');
@@ -130,7 +156,12 @@ function ctrl_admin_project_edit() {
     if (projects()->get(param(1))->sync())
         projects()->save();
     $output['project'] = projects()->get(param(1));
-    $output['templates'] = array('template a','template b','longerlongerlonger'); //$templates;
+
+    //get template list
+    $templates = getFiles(cfg('style_dir') . cfg('theme') . cfg('tpl_dir'),'/project_(\w+)\.html\.php/i');
+    $templates = str_replace('project_','',  str_replace('.html.php', '', implode('|',$templates)));
+    $templates = explode('|',$templates);
+    $output['templates'] = $templates; //$templates;
     $output['admin_title']  ='&laquo; back to list';
     output("project_edit.html.php", $output);
 }

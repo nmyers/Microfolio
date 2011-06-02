@@ -12,6 +12,8 @@ $(function() {
         newProject();
         return false;
     })
+
+    updateIframe(default_url);
     
 })
 
@@ -22,7 +24,7 @@ $(function() {
  * @see http://mjsarfatti.com/sandbox/nestedSortable/
  */
 function createSortable() {
-    $('#projects_root').addClass('sortable');
+    $('ol#menu').addClass('sortable');
     $('ol.sortable').nestedSortable({
         forcePlaceholderSize: true,
         handle: 'div',
@@ -43,6 +45,7 @@ function reloadList(successCallback) {
         function(){
             createSortable();
             addControls();
+            updateIframe(default_url);
             if (typeof successCallback === 'function') {
                 successCallback();
             }
@@ -61,6 +64,7 @@ function saveOrder(successCallback) {
     },function(json){
         var data = jQuery.parseJSON(json);
         showMessage(data.message,data.message_type);
+        updateIframe(default_url);
         if (typeof successCallback === 'function') {
             successCallback();
         }
@@ -75,6 +79,7 @@ function saveStatus(project_slug,new_status,successCallback) {
     },function(json){
         var data = jQuery.parseJSON(json);
         showMessage(data.message,data.message_type);
+        updateIframe(default_url);
         if (typeof successCallback === 'function') {
             successCallback();
         }
@@ -114,6 +119,7 @@ function deleteProject(project_slug,successCallback) {
     },function(json){
         var data = jQuery.parseJSON(json);
         showMessage(data.message,data.message_type);
+        updateIframe(default_url);
         if (typeof successCallback === 'function') {
             successCallback();
         }
@@ -126,12 +132,12 @@ function deleteProject(project_slug,successCallback) {
  */
 function addControls() {
 
-    $("#projects_root .controls").remove();
+    $("ol#menu .controls").remove();
     controls  = "<a href='#rename' class='button2' >rename</a>";
     controls += "<a href='#edit'   class='button2' >edit</a>";
     controls += "<a href='#delete' class='button2' >delete</a>";
     controls += "<a href='#status' class='button bt-status' >offline</a>";
-    $("#projects_root div").append("<div class='controls' >"+controls+"</div>");
+    $("ol#menu div").append("<div class='controls' >"+controls+"</div>");
 
     /**
      * Rename an element
@@ -167,7 +173,7 @@ function addControls() {
      */
     $(".controls a[href=#edit]").click(function(){
         parentDiv = $(this).parent().parent().children('a').first();
-        window.location = parentDiv.attr('href');
+        window.location = parentDiv.attr('href').replace('project/', 'admin/projects/');
         return false;
     })
 

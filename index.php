@@ -48,7 +48,6 @@ function config() {
     } else {
         die('no config found! please install.');
     }
-    
 }
 
 function cfg($key) {
@@ -82,7 +81,7 @@ function param($i) {
 
 function router() {
     global $routes,$params;
-    $query = rtrim(str_replace('q=','', $_SERVER['QUERY_STRING']),'/');
+    $query = trim(str_replace('q=','', $_SERVER['QUERY_STRING']),'/');
     //QUERY STRING replace the first ? by &, this corrects it:
     if (strpos($_SERVER['REQUEST_URI'], '?q=')===false && strpos($query,'&')!==false) $query{strpos($query,'&')}='?';
     foreach ($routes as $pattern => $function) {
@@ -149,7 +148,8 @@ function output($tpl, $contentArray=array(), $returnToString=FALSE) {
         $tpl = cfg('style_dir') . cfg('theme') . cfg('tpl_dir') . $tpl;
     }
 
-    if (!file_exists($tpl)) redirect();
+    if (!file_exists($tpl))
+        throw new Exception("Can't find template '$tpl'.");
 
     extract($contentArray, EXTR_OVERWRITE);
     $output = $contentArray;
@@ -227,6 +227,23 @@ function getPost($key,$sanitize=true) {
     $val = stripslashes($_POST[$key]);
     if ($sanitize)  $val = filter_var($val, FILTER_SANITIZE_STRING);
     return $val;
+}
+
+/**
+ * Returns an array of all the files matching the pattern
+ *
+ * @param  string   $dir
+ * @param  string   $pattern  Regex pattern to filter the files
+ * @return array              Array of files
+ */
+function getFiles($dir, $pattern='/.*/') {
+    $files = scandir($dir);
+    $result = array();
+    foreach ($files as $file) {
+        if ($file != '.' && $file != '..' && preg_match($pattern, $file))
+                $result[] = $file;
+    }
+    return $result;
 }
 
 /* -------------------------------------------------------------------

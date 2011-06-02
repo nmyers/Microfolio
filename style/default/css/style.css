@@ -1,11 +1,60 @@
 /* 
-    Document   : style
-    Created on : 03-Apr-2011, 17:37:36
-    Author     : Nicolas
-    Description:
-        Purpose of the stylesheet follows.
+Document   : style
+Created on : 03-Apr-2011, 17:37:36
+Author     : Nicolas
+Description:
+Purpose of the stylesheet follows.
 */
-
-body {
-    background: #fff;
+*
+{
+	margin: 0;
+	padding: 0;
+}
+BODY
+{
+	background: #FFF;
+	font-family: Arial;
+	font-size: 80%;
+}
+#menu
+{
+	list-style: none;
+	width: 150px;
+	/*+placement:float-left 0px 0px;*/
+	float: left;
+	position: relative;
+	left: 0px;
+	top: 0px;
+}
+#menu OL
+{
+	margin-left: 25px;
+	list-style: none;
+}
+#content
+{
+	width: 600px;
+	/*+placement:float-left 0px 0px;*/
+	float: left;
+	position: relative;
+	left: 0px;
+	top: 0px;
+}
+.item
+{
+	width: 100%;
+	margin-bottom: 15px;
+}
+.item .embed
+{
+	width: 100%;
+}
+.item .embed IFRAME
+{
+	width: 100%;
+	height: 350px;
+}
+.item .image
+{
+	width: 100%;
 }
